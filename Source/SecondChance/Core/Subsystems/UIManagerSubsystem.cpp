@@ -3,16 +3,18 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "MyGameInstance.h"
+#include "NewGameSubsystem.h"
 #include "UIActions.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Sound/SoundClass.h"
 #include "UI/Settings/AudioOptionType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Core/Save/AudioSettingsSaveGame.h"
+#include "Core/Save/SaveGameSubsystem.h"
 #include "GameFramework/GameUserSettings.h"
 
 static const FString AudioSettingsSlot = TEXT("AudioSettings");
-static const int32 AudioSettingsUserIndex = 0;
+static constexpr int32 AudioSettingsUserIndex = 0;
 
 void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -111,32 +113,10 @@ void UUIManagerSubsystem::HideCurrentUI()
 }
 void UUIManagerSubsystem::SetUIState(EUIState NewState)
 {
-	if (CurrentState == NewState)
-	{
-		return;
-	}
+	if (CurrentState == NewState) return;
 
 	HideCurrentUI();
-
 	CurrentState = NewState;
-
-	switch (CurrentState)
-	{
-	case EUIState::MainMenu:
-		CreateAndShowWidget(UIConfig->MainMenuClass);
-		break;
-
-	case EUIState::Options:
-		CreateAndShowWidget(UIConfig->OptionsMenuClass);
-		break;
-
-	case EUIState::Pause:
-		CreateAndShowWidget(UIConfig->PauseMenuClass);
-		break;
-
-	default:
-		break;
-	}
 }
 
 void UUIManagerSubsystem::CreateAndShowWidget(TSubclassOf<UUIBaseWidget> WidgetClass)
@@ -171,11 +151,13 @@ void UUIManagerSubsystem::HandleMenuAction(EUIAction Action)
 	case EUIAction::NewGame:
 		UE_LOG(LogTemp, Log, TEXT("New Game"));
 		// TODO: Start new game
+		HandleNewGame();
 		break;
 
 	case EUIAction::Load:
 		UE_LOG(LogTemp, Log, TEXT("Load Game"));
 		// TODO: Show load menu
+		HandleLoadGame();
 		break;
 
 	case EUIAction::Options:
@@ -194,6 +176,26 @@ void UUIManagerSubsystem::HandleMenuAction(EUIAction Action)
 		}
 		break;
 	}
+}
+// ============================================================
+// NEW GAME
+// ============================================================
+void UUIManagerSubsystem::HandleNewGame()
+{
+	UNewGameSubsystem* NewGameSubsystem =
+		GetGameInstance()->GetSubsystem<UNewGameSubsystem>();
+
+	NewGameSubsystem->StartNewGame();
+}
+// ============================================================
+// Load GAME
+// ============================================================
+void UUIManagerSubsystem::HandleLoadGame() const
+{
+	USaveGameSubsystem* SaveGameSubsystem =
+		GetGameInstance()->GetSubsystem<USaveGameSubsystem>();
+
+	///////////////////////////////////////////////////////////////SaveGameSubsystem->LoadSave(SaveData->);
 }
 // ============================================================
 // AUDIO SETTINGS
@@ -221,19 +223,19 @@ void UUIManagerSubsystem::SetAudioOption(EAudioOption Option, float Value)
 	
 	MarkCategoryPending(ESettingsCategory::Audio);
 }
-void UUIManagerSubsystem::SetMasterVolume(float Value)
+void UUIManagerSubsystem::SetMasterVolume(float Value) const
 {
 	if (!UIConfig || !UIConfig->MasterSoundClass) return;
 
 	UIConfig->MasterSoundClass->Properties.Volume = Value;
 }
-void UUIManagerSubsystem::SetMusicVolume(float Value)
+void UUIManagerSubsystem::SetMusicVolume(float Value) const
 {
 	if (!UIConfig || !UIConfig->MusicSoundClass) return;
 
 	UIConfig->MusicSoundClass->Properties.Volume = Value;
 }
-void UUIManagerSubsystem::SetSFXVolume(float Value)
+void UUIManagerSubsystem::SetSFXVolume(float Value) const
 {
 	if (!UIConfig || !UIConfig->SFXSoundClass) return;
 
@@ -261,7 +263,7 @@ void UUIManagerSubsystem::CancelAudioSettings()
 
 	ClearCategoryPending(ESettingsCategory::Audio);
 }
-void UUIManagerSubsystem::SaveAudioSettings()
+void UUIManagerSubsystem::SaveAudioSettings() const
 {
 	UAudioSettingsSaveGame* SaveGame =
 		Cast<UAudioSettingsSaveGame>(
@@ -313,10 +315,6 @@ void UUIManagerSubsystem::LoadAudioSettings()
 // ============================================================
 // GRAPHICS SETTINGS
 // ============================================================
-void UUIManagerSubsystem::ConfirmApplyGraphics()
-{
-	ApplyPendingSettings_Internal();
-}
 void UUIManagerSubsystem::SetResolution(int32 Index)
 {
 	PendingResolutionIndex = Index;
@@ -365,13 +363,7 @@ void UUIManagerSubsystem::CancelGraphicsSettings()
 {
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
-
-	// Restore resolution
-	TArray<FIntPoint> Resolutions = {
-		{1920,1080},
-		{2560,1440},
-		{3840,2160}
-	};
+	
 	Settings->SetScreenResolution(SupportedResolutions[CurrentResolutionIndex]);
 
 	// Restore window mode
@@ -473,6 +465,7 @@ void UUIManagerSubsystem::CancelPendingSettings()
 		case ESettingsCategory::Controls:
 			//CancelControlsSettings();
 			break;
+		default: ;
 		}
 	}
 	PendingCategories.Empty();

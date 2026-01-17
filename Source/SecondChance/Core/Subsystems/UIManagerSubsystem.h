@@ -97,12 +97,18 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category="Settings")
 	FOnConfirmSettingsRequired OnConfirmSettingsRequired;
+	// ============================================================
+	// NEW GAME
+	// ============================================================
+	void HandleNewGame();
+	// ============================================================
+	// Load GAME
+	// ============================================================
+	void HandleLoadGame() const;
 	/* =====================================================
 	 * AUDIO SETTINGS
 	 * ===================================================== */
 
-	// Delegates
-	//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAudioSettingsChanged);
 
 	// Set / Apply / Cancel
 	UFUNCTION(BlueprintCallable, Category="Settings|Audio")
@@ -136,14 +142,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Settings|Audio")
 	float GetPendingSFXVolume() const { return PendingSFXVolume; }
 
-	void SaveAudioSettings();
+	void SaveAudioSettings() const;
 	void LoadAudioSettings();
 	
 	/* =====================================================
 	 * GRAPHICS SETTINGS
 	 * ===================================================== */
-	UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
-	void ConfirmApplyGraphics();
 	
 	UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
 	void SetResolution(int32 Index);
@@ -169,9 +173,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="UI|Graphics")
 	int32 GetPendingQuality() const { return PendingQuality; }
 	// Internal audio apply
-	void SetMasterVolume(float Value);
-	void SetMusicVolume(float Value);
-	void SetSFXVolume(float Value);
+	void SetMasterVolume(float Value) const;
+	void SetMusicVolume(float Value) const;
+	void SetSFXVolume(float Value) const;
 	/* =====================================================
 	 * FUTURE: CONTROLS SETTINGS
 	 * ===================================================== */
@@ -234,11 +238,6 @@ private:
 	bool HasPendingChanges() const
 	{
 		return PendingCategories.Num() > 0;
-	}
-
-	bool HasPendingCategory(ESettingsCategory Category) const
-	{
-		return PendingCategories.Contains(Category);
 	}
 	void MarkCategoryPending(ESettingsCategory Category)
 	{
