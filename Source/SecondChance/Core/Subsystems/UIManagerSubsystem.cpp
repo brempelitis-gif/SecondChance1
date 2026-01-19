@@ -92,7 +92,7 @@ void UUIManagerSubsystem::ShowOptionsMenu()
 	if (!UIConfig || !UIConfig->OptionsMenuClass) return;
 
 	SetUIState(EUIState::Options);
-	CreateAndShowWidget(UIConfig->OptionsMenuClass);
+	//CreateAndShowWidget(UIConfig->OptionsMenuClass);
 }
 void UUIManagerSubsystem::ShowPauseMenu()
 {
@@ -113,11 +113,33 @@ void UUIManagerSubsystem::HideCurrentUI()
 }
 void UUIManagerSubsystem::SetUIState(EUIState NewState)
 {
-	if (CurrentState == NewState) return;
+	if (CurrentState == NewState)
+	{
+		return;
+	}
 
 	HideCurrentUI();
 	CurrentState = NewState;
+
+	switch (CurrentState)
+	{
+	case EUIState::MainMenu:
+		CreateAndShowWidget(UIConfig->MainMenuClass);
+		break;
+
+	case EUIState::Options:
+		CreateAndShowWidget(UIConfig->OptionsMenuClass);
+		break;
+
+	case EUIState::Pause:
+		CreateAndShowWidget(UIConfig->PauseMenuClass);
+		break;
+
+	default:
+		break;
+	}
 }
+
 
 void UUIManagerSubsystem::CreateAndShowWidget(TSubclassOf<UUIBaseWidget> WidgetClass)
 {
