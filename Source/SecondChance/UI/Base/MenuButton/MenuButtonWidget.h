@@ -39,6 +39,7 @@ protected:
 	 * INTERNAL
 	 * ================================ */
 
+	void NativeOnPreconstruct();
 	virtual void NativeOnInitialized() override;
 
 	/* ================================
@@ -50,6 +51,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UTextBlock* LabelText;
+
+	//Designer-editabledefault label
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="MenuBtutton")
+	FText DesignerLabel = FText::FromString("Button");
 
 private:
 	UFUNCTION()

@@ -14,6 +14,14 @@ void UMenuSliderWidget::NativeOnInitialized()
 	}
 }
 
+void UMenuSliderWidget::NativeOnPreConstruct()
+{
+	if (Label)
+	{
+		Label->SetText(DesignerLabel);
+	}
+}
+
 void UMenuSliderWidget::HandleSliderChanged(float Value)
 {
 	OnValueChanged.Broadcast(Value);
