@@ -29,7 +29,6 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
-	virtual void NativeOnPreConstruct();
 
 	UFUNCTION()
 	void HandleSliderChanged(float Value);
@@ -39,9 +38,5 @@ protected:
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UTextBlock* Label;
-
-	//Designer-editabledefault label
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="MenuSlider")
-	FText DesignerLabel = FText::FromString("Slider");
 };
 

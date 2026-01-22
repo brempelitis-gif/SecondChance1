@@ -2,14 +2,7 @@
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 
-void UMenuButtonWidget::NativeOnPreconstruct()
-{
-	Super::NativePreConstruct();
-	if (LabelText)
-	{
-		LabelText->SetText(DesignerLabel);
-	}
-}
+
 void UMenuButtonWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();

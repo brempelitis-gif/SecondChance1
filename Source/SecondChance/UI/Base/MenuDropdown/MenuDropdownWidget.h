@@ -36,7 +36,6 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
-	virtual void NativeOnPreConstruct();
 
 	UFUNCTION()
 	void HandleSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectType);
@@ -46,14 +45,7 @@ protected:
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UTextBlock* Label;
-
-	//Designer-editabledefault label
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="MenuDropdown")
-	TArray<FString> DesignerOptions;
-
-	//Designer-editabledefault label
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="MenuDropdown")
-	FText DesignerLabel;
+	
 private:
 	TArray<FString> CachedOptions;
 };

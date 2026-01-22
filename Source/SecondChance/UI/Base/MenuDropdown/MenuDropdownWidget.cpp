@@ -3,18 +3,6 @@
 #include "Components/TextBlock.h"
 //#include "SlateCore/Public/Widgets/Input/SComboBox.h" 
 
-void UMenuDropdownWidget::NativeOnPreConstruct()
-{
-	Super::NativePreConstruct();
-	if (Label)
-	{
-		Label->SetText(DesignerLabel);
-	}
-	if (DesignerOptions.Num() > 0)
-	{
-		SetOptions(DesignerOptions);
-	}
-}
 void UMenuDropdownWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();

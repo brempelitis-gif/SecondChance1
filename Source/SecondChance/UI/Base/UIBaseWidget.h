@@ -11,7 +11,7 @@ class SECONDCHANCE_API UUIBaseWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
-
+	
 	// --- Public API ---
 	UFUNCTION(BlueprintCallable, Category="UI")
 	void FadeIn();
