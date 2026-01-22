@@ -1,8 +1,9 @@
 #pragma once
-
+#include "Components/EditableTextBox.h"
 #include "UI/Base/UIBaseWidget.h"
 #include "MenuSliderWidget.generated.h"
 
+class UTextBox;
 class USlider;
 class UTextBlock;
 
@@ -20,13 +21,16 @@ class SECONDCHANCE_API UMenuSliderWidget : public UUIBaseWidget
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetValue(float InValue);
+	void SetValueUI(float InValue);
 
 	UFUNCTION(BlueprintCallable)
 	float GetValue() const;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnMenuSliderValueChanged OnValueChanged;
-
+	
+	UFUNCTION(BlueprintCallable, Category="Label")
+	void SetLabel(const FText& InText);
 protected:
 	virtual void NativeOnInitialized() override;
 
@@ -36,7 +40,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	USlider* Slider;
 
-	UPROPERTY(meta = (BindWidgetOptional))
-	UTextBlock* Label;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* LabelText;
+
+	UPROPERTY(meta = (BindWidget))
+	UEditableTextBox* Value;
 };
 
