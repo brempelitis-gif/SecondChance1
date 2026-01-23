@@ -32,7 +32,7 @@ public:
 	
 
 	UPROPERTY(BlueprintAssignable)
-	FOnMenuDropdownChanged OnSelectionChanged;
+	FOnMenuDropdownChanged OnSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectType);
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -43,9 +43,11 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UComboBoxString* ComboBox;
 
-	UPROPERTY(meta = (BindWidgetOptional))
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Label;
-	
+
+	UPROPERTY(meta = (BindWidget))
+	UComboBox* Menu;
 private:
 	TArray<FString> CachedOptions;
 };
