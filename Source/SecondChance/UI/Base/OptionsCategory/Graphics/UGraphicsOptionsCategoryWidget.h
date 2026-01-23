@@ -4,13 +4,11 @@
 #include "Components/ComboBoxString.h"
 #include "UGraphicsOptionsCategoryWidget.generated.h"
 
-class UComboBoxString;
 class UMenuDropdownWidget;
+class UUIManagerSubsystem;
 
 /**
- * Graphics options category widget.
- * - Bind three ComboBoxString widgets (Resolution / Window Mode / Quality) in the WBP.
- * - Uses UIManagerSubsystem to preview and mark pending changes.
+ * Graphics options category widget
  */
 UCLASS()
 class SECONDCHANCE_API UGraphicsOptionsCategoryWidget : public UOptionsCategoryBaseWidget
@@ -18,7 +16,11 @@ class SECONDCHANCE_API UGraphicsOptionsCategoryWidget : public UOptionsCategoryB
 	GENERATED_BODY()
 
 protected:
-	/* Bind these in the UMG Blueprint (names must match unless you change them) */
+	virtual void NativePreConstruct() override;
+	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
+
+	/* Bound dropdowns from the UMG widget */
 	UPROPERTY(meta = (BindWidget))
 	UMenuDropdownWidget* ResolutionCombo;
 
@@ -28,34 +30,13 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UMenuDropdownWidget* QualityCombo;
 
-	/* Cached strings for resolution entries (same order as UIManager->SupportedResolutions) */
-	UPROPERTY()
-	TArray<FString> CachedResolutionStrings;
-
-	/* Suppress callbacks while programmatically changing selections */
-	bool bSuppressEvents = false;
-
-	/* UWidget lifecycle */
-	virtual void NativeOnInitialized() override;
-	virtual void NativeDestruct() override;
-
-	/* Populate comboboxes from UIManager (supported resolutions etc.) */
-	void PopulateCombos();
-
-	/* Refresh UI from UIManager pending values */
-	void RefreshFromManager();
-
-	/* Combo handlers */
+	/* Handlers (must be UFUNCTION with same signature as UMenuDropdownWidget::OnSelectionChanged) */
 	UFUNCTION()
-	void OnResolutionSelected(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void HandleResolutionChanged(int32 SelectedIndex);
 
 	UFUNCTION()
-	void OnWindowModeSelected(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void HandleWindowModeChanged(int32 SelectedIndex);
 
 	UFUNCTION()
-	void OnQualitySelected(FString SelectedItem, ESelectInfo::Type SelectionType);
-
-	/* React when UIManager broadcasts settings changes (apply/cancel or other updates) */
-	UFUNCTION()
-	void HandleManagerSettingsChanged(ESettingsCategory ChangedCategory);
+	void HandleQualityChanged(int32 SelectedIndex);
 };

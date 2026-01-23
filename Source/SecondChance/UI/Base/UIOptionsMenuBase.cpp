@@ -9,10 +9,15 @@ void UUIOptionsMenuBase::NativeOnInitialized()
 
 	UIManager = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
 	BindButtons();
+}
+void UUIOptionsMenuBase::NativeConstruct()
+{
+	Super::NativeConstruct();
 
+	// At this point BindWidget children should be initialized.
+	// Set default category (safe to call now).
 	SetActiveCategory(ESettingsCategory::Audio);
 }
-
 void UUIOptionsMenuBase::BindButtons()
 {
 	if (AudioTab)
@@ -49,9 +54,11 @@ void UUIOptionsMenuBase::BindButtons()
 
 void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Switcer start"));
-	if (!CategorySwitcher) return;
-	UE_LOG(LogTemp, Warning, TEXT("Switcher Found"));
+	if (!CategorySwitcher)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UUIOptionsMenuBase::SetActiveCategory - CategorySwitcher is null"));
+		return;
+	}
 	int32 Index = 0;
 	switch (Category)
 	{
@@ -61,8 +68,25 @@ void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
 	case ESettingsCategory::Gameplay:  Index = 3; break;
 	default: break;
 	}
+	const int32 Num = CategorySwitcher->GetNumWidgets();
+	UE_LOG(LogTemp, Log, TEXT("SetActiveCategory: Category=%d -> Index=%d, SwitcherNum=%d, CurrentIndex=%d"),
+		   (int32)Category, Index, Num, CategorySwitcher->GetActiveWidgetIndex());
 
+	if (Index < 0 || Index >= Num)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SetActiveCategory - Index %d is out of bounds (NumWidgets = %d)"), Index, Num);
+		return;
+	}
+
+	UWidget* TargetWidget = CategorySwitcher->GetWidgetAtIndex(Index);
+	if (TargetWidget)
+	{
+		UE_LOG(LogTemp, Log, TEXT("SetActiveCategory - Activating widget at index %d: %s"), Index, *TargetWidget->GetName());
+	}
 	CategorySwitcher->SetActiveWidgetIndex(Index);
+	// Confirm it actually changed
+	UE_LOG(LogTemp, Log, TEXT("After SetActiveWidgetIndex: ActiveIndex=%d"), CategorySwitcher->GetActiveWidgetIndex());
+
 }
 
 void UUIOptionsMenuBase::HandleAudioTab()

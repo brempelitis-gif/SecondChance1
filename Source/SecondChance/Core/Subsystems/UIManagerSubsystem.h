@@ -11,11 +11,11 @@ class UUIBaseWidget;
 UENUM(BlueprintType)
 enum class ESettingsCategory : uint8
 {
-	None,
 	Audio,
 	Graphics,
 	Controls,
-	Gameplay
+	Gameplay,
+	None
 };
 /* =====================================================
  * UI STATE

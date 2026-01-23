@@ -14,6 +14,7 @@ class SECONDCHANCE_API UUIOptionsMenuBase : public UUIBaseWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeConstruct() override;
 	
 	/* =======================
 	 * TOP BUTTONS
@@ -64,12 +65,18 @@ private:
 	void BindButtons();
 
 	/* === Handlers === */
+	UFUNCTION(BlueprintCallable)
 	void HandleAudioTab();
+	UFUNCTION(BlueprintCallable)
 	void HandleGraphicsTab();
+	UFUNCTION(BlueprintCallable)
 	void HandleControlsTab();
+	UFUNCTION(BlueprintCallable)
 	void HandleGameplayTab();
 
+	UFUNCTION(BlueprintCallable)
 	void HandleApply();
+	UFUNCTION(BlueprintCallable)
 	void HandleCancel();
 
 	void SetActiveCategory(ESettingsCategory Category);

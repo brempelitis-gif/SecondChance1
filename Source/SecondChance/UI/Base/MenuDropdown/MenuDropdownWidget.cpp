@@ -1,7 +1,23 @@
 #include "MenuDropdownWidget.h"
 #include "Components/ComboBoxString.h"
 #include "Components/TextBlock.h"
-//#include "SlateCore/Public/Widgets/Input/SComboBox.h" 
+
+void UMenuDropdownWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	// Apply designer label so it shows in UMG Designer and at runtime if present.
+	if (Label)
+	{
+		Label->SetText(DesignerLabel);
+	}
+
+	// If designer options are provided, populate them for preview/runtime defaults.
+	if (DesignerOptions.Num() > 0 && ComboBox)
+	{
+		SetOptions(DesignerOptions);
+	}
+}
 
 void UMenuDropdownWidget::NativeOnInitialized()
 {
@@ -49,10 +65,18 @@ int32 UMenuDropdownWidget::GetSelectedIndex() const
 	return CachedOptions.IndexOfByKey(Selected);
 }
 
+void UMenuDropdownWidget::SetLabel(const FText& InText)
+{
+	if (Label)
+	{
+		Label->SetText(InText);
+	}
+}
+
 void UMenuDropdownWidget::HandleSelectionChanged(
 	FString SelectedItem,
 	ESelectInfo::Type SelectType
-) 
+)
 {
 	const int32 Index = CachedOptions.IndexOfByKey(SelectedItem);
 	if (Index != INDEX_NONE)
@@ -60,4 +84,3 @@ void UMenuDropdownWidget::HandleSelectionChanged(
 		OnSelectionChanged.Broadcast(Index);
 	}
 }
-

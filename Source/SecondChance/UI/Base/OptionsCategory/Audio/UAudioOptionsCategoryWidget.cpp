@@ -22,17 +22,14 @@ void UAudioOptionsCategoryWidget::NativeOnInitialized()
 	if (MasterSlider)
 	{
 		MasterSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
-		MasterSlider->SetLabel(MasterSliderLabel);
 	}
 	if (MusicSlider)
 	{
 		MusicSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
-		MusicSlider->SetLabel(MusicSliderLabel);
 	}
 	if (SFXSlider)
 	{
 		SFXSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
-		SFXSlider->SetLabel(SFXSliderLabel);
 	}
 
 	// Listen for manager changes so we refresh when Apply/Cancel occurs
@@ -43,6 +40,14 @@ void UAudioOptionsCategoryWidget::NativeOnInitialized()
 
 	// Initialize slider values from pending (so if the user already changed values they are shown)
 	RefreshFromManager();
+}
+void UAudioOptionsCategoryWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+	
+	MasterSlider->SetLabel(MasterSliderLabel);
+	MusicSlider->SetLabel(MusicSliderLabel);
+	SFXSlider->SetLabel(SFXSliderLabel);
 }
 
 void UAudioOptionsCategoryWidget::NativeDestruct()

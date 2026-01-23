@@ -38,6 +38,7 @@ protected:
 	FText SFXSliderLabel = FText::FromString("SFX");
 
 	// Called after the parent - ensure UIManager from base is available
+	virtual void NativePreConstruct() override;
 	virtual void NativeOnInitialized() override;
 	virtual void NativeDestruct() override;
 
