@@ -17,29 +17,8 @@ void UAudioOptionsCategoryWidget::NativeOnInitialized()
 			UIManager = GI->GetSubsystem<UUIManagerSubsystem>();
 		}
 	}
-
-	// Bind sliders
-	if (MasterSlider)
-	{
-		MasterSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
-	}
-	if (MusicSlider)
-	{
-		MusicSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
-	}
-	if (SFXSlider)
-	{
-		SFXSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
-	}
-
-	// Listen for manager changes so we refresh when Apply/Cancel occurs
-	if (UIManager)
-	{
-		UIManager->OnSettingsChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleManagerSettingsChanged);
-	}
-
 	// Initialize slider values from pending (so if the user already changed values they are shown)
-	RefreshFromManager();
+    RefreshFromManager();
 }
 void UAudioOptionsCategoryWidget::NativePreConstruct()
 {
@@ -48,6 +27,8 @@ void UAudioOptionsCategoryWidget::NativePreConstruct()
 	MasterSlider->SetLabel(MasterSliderLabel);
 	MusicSlider->SetLabel(MusicSliderLabel);
 	SFXSlider->SetLabel(SFXSliderLabel);
+	// Bind slider events after preconstruct so they are ready when initialized occurs
+	BindSliders();
 }
 
 void UAudioOptionsCategoryWidget::NativeDestruct()
@@ -72,6 +53,29 @@ void UAudioOptionsCategoryWidget::NativeDestruct()
 	}
 
 	Super::NativeDestruct();
+}
+
+void UAudioOptionsCategoryWidget::BindSliders()
+{
+	// Bind sliders
+	if (MasterSlider)
+	{
+		MasterSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
+	}
+	if (MusicSlider)
+	{
+		MusicSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
+	}
+	if (SFXSlider)
+	{
+		SFXSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
+	}
+
+	// Listen for manager changes so we refresh when Apply/Cancel occurs
+	if (UIManager)
+	{
+		UIManager->OnSettingsChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleManagerSettingsChanged);
+	}
 }
 
 void UAudioOptionsCategoryWidget::HandleMasterChanged(float Value)

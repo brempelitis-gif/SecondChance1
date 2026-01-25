@@ -159,4 +159,5 @@ void UUIOptionsMenuBase::UpdateActionButtonsVisibility()
 	const bool bHasGraphicsPending    = UIManager ? UIManager->IsCategoryPending(ESettingsCategory::Graphics) : false;
 	const bool bShouldShow  = bHasAudioPending || bHasGraphicsPending;
 	CancelButton->SetVisibility((bShouldShow) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	ApplyButton->SetVisibility((bShouldShow) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }

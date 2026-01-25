@@ -30,6 +30,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UMenuDropdownWidget* QualityCombo;
 
+	UFUNCTION()
+	void BindDropdowns();
 	/* Handlers (must be UFUNCTION with same signature as UMenuDropdownWidget::OnSelectionChanged) */
 	UFUNCTION()
 	void HandleResolutionChanged(int32 SelectedIndex);

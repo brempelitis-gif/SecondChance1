@@ -42,6 +42,8 @@ protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeDestruct() override;
 
+	UFUNCTION()
+	void BindSliders();
 	// Slider handlers
 	UFUNCTION()
 	void HandleMasterChanged(float Value);

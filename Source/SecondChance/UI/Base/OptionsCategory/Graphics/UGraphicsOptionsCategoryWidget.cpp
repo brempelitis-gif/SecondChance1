@@ -43,6 +43,8 @@ void UGraphicsOptionsCategoryWidget::NativePreConstruct()
 		QualityCombo->SetOptions(Qualities);
 		QualityCombo->SetLabel(FText::FromString(TEXT("Quality")));
 	}
+	// Bind dropdown events
+	BindDropdowns();
 }
 
 void UGraphicsOptionsCategoryWidget::NativeOnInitialized()
@@ -54,34 +56,19 @@ void UGraphicsOptionsCategoryWidget::NativeOnInitialized()
 	{
 		UIManager = GI->GetSubsystem<UUIManagerSubsystem>();
 	}
-
-	// Bind to dropdown events (UMenuDropdownWidget::OnSelectionChanged broadcasts int32)
 	if (ResolutionCombo)
 	{
-		ResolutionCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleResolutionChanged);
-		// set initial selection from UIManager if available
-		if (UIManager)
-		{
-			ResolutionCombo->SetSelectedIndex(UIManager->GetPendingResolutionIndex());
-		}
+		ResolutionCombo->SetSelectedIndex(UIManager->GetPendingResolutionIndex());
 	}
 
 	if (WindowModeCombo)
 	{
-		WindowModeCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleWindowModeChanged);
-		if (UIManager)
-		{
-			WindowModeCombo->SetSelectedIndex(UIManager->GetPendingWindowMode());
-		}
+		WindowModeCombo->SetSelectedIndex(UIManager->GetPendingWindowMode());
 	}
 
 	if (QualityCombo)
 	{
-		QualityCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleQualityChanged);
-		if (UIManager)
-		{
-			QualityCombo->SetSelectedIndex(UIManager->GetPendingQuality());
-		}
+		QualityCombo->SetSelectedIndex(UIManager->GetPendingQuality());
 	}
 }
 
@@ -105,6 +92,13 @@ void UGraphicsOptionsCategoryWidget::NativeDestruct()
 }
 
 /* === Handlers === */
+
+void UGraphicsOptionsCategoryWidget::BindDropdowns()
+{
+	ResolutionCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleResolutionChanged);
+	WindowModeCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleWindowModeChanged);
+	QualityCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleQualityChanged);
+}
 
 void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(int32 SelectedIndex)
 {
