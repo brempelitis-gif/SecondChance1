@@ -9,11 +9,38 @@ void UUIOptionsMenuBase::NativeOnInitialized()
 
 	UIManager = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
 	BindButtons();
+	if (UIManager)
+	{
+		UIManager->OnSettingsChanged.AddDynamic(this, &UUIOptionsMenuBase::HandleSettingsChanged);
+	}
+	UpdateActionButtonsVisibility();
 }
-void UUIOptionsMenuBase::NativeConstruct()
+void UUIOptionsMenuBase::NativePreConstruct()
 {
-	Super::NativeConstruct();
-
+	Super::NativePreConstruct();
+	if (AudioTab)
+	{
+		AudioTab->SetLabel(AudioTabLabel);
+	}  
+	if (GraphicsTab)
+	{
+		GraphicsTab->SetLabel(GraphicsTabLabel);
+	}
+	if (ControlsTab){
+		ControlsTab->SetLabel(ControlsTabLabel);
+	}
+	if (GameplayTab)
+	{
+		GameplayTab->SetLabel(GameplayTabLabel);
+	}
+	if (ApplyButton)
+	{
+		ApplyButton->SetLabel(ApplyButtonLabel);
+	}
+	if (CancelButton)
+	{
+		CancelButton->SetLabel(CancelButtonLabel);
+	}
 	// At this point BindWidget children should be initialized.
 	// Set default category (safe to call now).
 	SetActiveCategory(ESettingsCategory::Audio);
@@ -23,36 +50,30 @@ void UUIOptionsMenuBase::BindButtons()
 	if (AudioTab)
 	{
 		AudioTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleAudioTab);
-		AudioTab->SetLabel(AudioTabLabel);
 	}  
 	if (GraphicsTab)
 	{
 		GraphicsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGraphicsTab);
-		GraphicsTab->SetLabel(GraphicsTabLabel);
 	}
 	if (ControlsTab){
 		ControlsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleControlsTab);
-		ControlsTab->SetLabel(ControlsTabLabel);
 	}
 	if (GameplayTab)
 	{
 		GameplayTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGameplayTab);
-		GameplayTab->SetLabel(GameplayTabLabel);
 	}
 
 	if (ApplyButton)
 	{
 		ApplyButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleApply);
-		ApplyButton->SetLabel(ApplyButtonLabel);
 	}
 	if (CancelButton)
 	{
 		CancelButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleCancel);
-		CancelButton->SetLabel(CancelButtonLabel);
 	}
 }
 
-void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
+void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category) const
 {
 	if (!CategorySwitcher)
 	{
@@ -69,35 +90,22 @@ void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
 	default: break;
 	}
 	const int32 Num = CategorySwitcher->GetNumWidgets();
-	UE_LOG(LogTemp, Log, TEXT("SetActiveCategory: Category=%d -> Index=%d, SwitcherNum=%d, CurrentIndex=%d"),
-		   (int32)Category, Index, Num, CategorySwitcher->GetActiveWidgetIndex());
 
 	if (Index < 0 || Index >= Num)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SetActiveCategory - Index %d is out of bounds (NumWidgets = %d)"), Index, Num);
 		return;
 	}
-
-	UWidget* TargetWidget = CategorySwitcher->GetWidgetAtIndex(Index);
-	if (TargetWidget)
-	{
-		UE_LOG(LogTemp, Log, TEXT("SetActiveCategory - Activating widget at index %d: %s"), Index, *TargetWidget->GetName());
-	}
 	CategorySwitcher->SetActiveWidgetIndex(Index);
-	// Confirm it actually changed
-	UE_LOG(LogTemp, Log, TEXT("After SetActiveWidgetIndex: ActiveIndex=%d"), CategorySwitcher->GetActiveWidgetIndex());
-
 }
 
 void UUIOptionsMenuBase::HandleAudioTab()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Handle Audio"));
 	SetActiveCategory(ESettingsCategory::Audio);
 }
 
 void UUIOptionsMenuBase::HandleGraphicsTab()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Handle Graphics"));
 	SetActiveCategory(ESettingsCategory::Graphics);
 }
 
@@ -113,9 +121,18 @@ void UUIOptionsMenuBase::HandleGameplayTab()
 
 void UUIOptionsMenuBase::HandleApply()
 {
-	if (UIManager)
+	if (!UIManager)
+	{
+		return;;
+	}
+	if (UIManager->IsCategoryPending(ESettingsCategory::Graphics))
+	{
+		UIManager->OnConfirmSettingsRequired.Broadcast(ESettingsCategory::Graphics);
+	}
+	else
 	{
 		UIManager->ApplyPendingSettings();
+		UpdateActionButtonsVisibility();
 	}
 }
 
@@ -125,5 +142,21 @@ void UUIOptionsMenuBase::HandleCancel()
 	{
 		UIManager->CancelPendingSettings();
 	}
+	//After cancelling, hide buttons until further changes are made
+	UpdateActionButtonsVisibility();
 }
-
+void UUIOptionsMenuBase::HandleSettingsChanged(ESettingsCategory Category)
+{
+	UpdateActionButtonsVisibility();
+}
+void UUIOptionsMenuBase::UpdateActionButtonsVisibility()
+{
+	if (!ApplyButton||!CancelButton)
+	{
+		return;
+	}
+	const bool bHasAudioPending    = UIManager ? UIManager->IsCategoryPending(ESettingsCategory::Audio) : false;
+	const bool bHasGraphicsPending    = UIManager ? UIManager->IsCategoryPending(ESettingsCategory::Graphics) : false;
+	const bool bShouldShow  = bHasAudioPending || bHasGraphicsPending;
+	CancelButton->SetVisibility((bShouldShow) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}

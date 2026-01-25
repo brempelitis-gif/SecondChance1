@@ -35,8 +35,8 @@ void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	
 	SupportedResolutions = {
 		{1920,1080},
-		{2560,1440},
-		{3840,2160}
+		{1600,900},
+		{1280,720}
 	};
 }
 
@@ -202,7 +202,7 @@ void UUIManagerSubsystem::HandleMenuAction(EUIAction Action)
 // ============================================================
 // NEW GAME
 // ============================================================
-void UUIManagerSubsystem::HandleNewGame()
+void UUIManagerSubsystem::HandleNewGame() const
 {
 	UNewGameSubsystem* NewGameSubsystem =
 		GetGameInstance()->GetSubsystem<UNewGameSubsystem>();
@@ -224,7 +224,6 @@ void UUIManagerSubsystem::HandleLoadGame() const
 // ============================================================
 void UUIManagerSubsystem::SetAudioOption(EAudioOption Option, float Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("SetAudioOption CALLED"));
 	switch (Option)
     	{
     	case EAudioOption::Master:
@@ -265,7 +264,6 @@ void UUIManagerSubsystem::SetSFXVolume(float Value) const
 }
 void UUIManagerSubsystem::ApplyAudioSettings()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Apply audio CALLED"));
 	CurrentMasterVolume = PendingMasterVolume;
 	CurrentMusicVolume  = PendingMusicVolume;
 	CurrentSFXVolume    = PendingSFXVolume;

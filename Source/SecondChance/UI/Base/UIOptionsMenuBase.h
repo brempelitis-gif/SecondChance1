@@ -14,7 +14,7 @@ class SECONDCHANCE_API UUIOptionsMenuBase : public UUIBaseWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
-	virtual void NativeConstruct() override;
+	virtual void NativePreConstruct() override;
 	
 	/* =======================
 	 * TOP BUTTONS
@@ -78,7 +78,17 @@ private:
 	void HandleApply();
 	UFUNCTION(BlueprintCallable)
 	void HandleCancel();
+	
+	// Callback for when settings change in the manager
+	UFUNCTION()
+	void HandleSettingsChanged(ESettingsCategory ChangedCategory);
+	
+	// Set active category in the switcher
+	void SetActiveCategory(ESettingsCategory Category) const;
 
-	void SetActiveCategory(ESettingsCategory Category);
+protected:
+	// Update visibility of Apply/Cancel buttons based on pending changes
+	UFUNCTION(BlueprintCallable, Category="Options")
+	virtual void UpdateActionButtonsVisibility();
 };
 
