@@ -29,59 +29,26 @@ void UUIOptionsMenuBase::NativeOnInitialized()
 void UUIOptionsMenuBase::NativePreConstruct()
 {
 	Super::NativePreConstruct();
-	if (AudioTab)
-	{
-		AudioTab->SetLabel(AudioTabLabel);
-	}  
-	if (GraphicsTab)
-	{
-		GraphicsTab->SetLabel(GraphicsTabLabel);
-	}
-	if (ControlsTab){
-		ControlsTab->SetLabel(ControlsTabLabel);
-	}
-	if (GameplayTab)
-	{
-		GameplayTab->SetLabel(GameplayTabLabel);
-	}
-	if (ApplyButton)
-	{
-		ApplyButton->SetLabel(ApplyButtonLabel);
-	}
-	if (CancelButton)
-	{
-		CancelButton->SetLabel(CancelButtonLabel);
-	}
+	// Uzstādām tekstus Editora priekšskatījumam
+	if (AudioTab) AudioTab->SetLabel(AudioTabLabel);
+	if (GraphicsTab) GraphicsTab->SetLabel(GraphicsTabLabel);
+	if (ControlsTab) ControlsTab->SetLabel(ControlsTabLabel);
+	if (GameplayTab) GameplayTab->SetLabel(GameplayTabLabel);
+	if (ApplyButton) ApplyButton->SetLabel(ApplyButtonLabel);
+	if (CancelButton) CancelButton->SetLabel(CancelButtonLabel);
 	// At this point BindWidget children should be initialized.
 	// Set default category (safe to call now).
 	SetActiveCategory(ESettingsCategory::Audio);
 }
 void UUIOptionsMenuBase::BindButtons()
 {
-	if (AudioTab)
-	{
-		AudioTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleAudioTab);
-	}  
-	if (GraphicsTab)
-	{
-		GraphicsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGraphicsTab);
-	}
-	if (ControlsTab){
-		ControlsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleControlsTab);
-	}
-	if (GameplayTab)
-	{
-		GameplayTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGameplayTab);
-	}
+	if (AudioTab) AudioTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleAudioTab);
+	if (GraphicsTab) GraphicsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGraphicsTab);
+	if (ControlsTab) ControlsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleControlsTab);
+	if (GameplayTab) GameplayTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGameplayTab);
 
-	if (ApplyButton)
-	{
-		ApplyButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleApply);
-	}
-	if (CancelButton)
-	{
-		CancelButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleCancel);
-	}
+	if (ApplyButton) ApplyButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleApply);
+	if (CancelButton) CancelButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleCancel);
 }
 
 void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
@@ -139,6 +106,7 @@ void UUIOptionsMenuBase::HandleApply()
 
 	if (CurrentCategory == ESettingsCategory::Graphics && CachedPopup)
 	{
+		// Piesaistām popupa notikumus UIManager sistēmai
 		CachedPopup->OnConfirmed.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::ApplyPendingSettings);
 		CachedPopup->OnTimedOutOrCancelled.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::CancelPendingSettings);
 		
@@ -146,10 +114,11 @@ void UUIOptionsMenuBase::HandleApply()
 		CachedPopup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::UpdateActionButtonsVisibility);
 		CachedPopup->OnTimedOutOrCancelled.AddUniqueDynamic(this, &UUIOptionsMenuBase::UpdateActionButtonsVisibility);
 
-		CachedPopup->ShowPopup(FText::FromString("Graphics"), 15.0f);
+		CachedPopup->ShowPopup(GraphicsTabLabel, 15.0f);
 	}
 	else
 	{
+		// Audio/Gameplay iestatījumus apstiprinām uzreiz
 		UIManager->ApplyPendingSettings();
 		UpdateActionButtonsVisibility();
 	}

@@ -18,6 +18,7 @@ class SECONDCHANCE_API UGraphicsOptionsCategoryWidget : public UOptionsCategoryB
 protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeOnInitialized() override;
+	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
 	/* Bound dropdowns from the UMG widget */

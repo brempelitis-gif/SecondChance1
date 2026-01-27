@@ -13,6 +13,7 @@ class SECONDCHANCE_API UUIConfirmationPopup : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	// Shows the popup with the given category name and timeout duration.
 	void ShowPopup(FText CategoryName, float Timeout);
 	void HidePopup();
 
@@ -23,7 +24,8 @@ public:
 	FOnPopupResult OnTimedOutOrCancelled;
 
 protected:
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativePreConstruct() override;
+    virtual void NativeDestruct() override;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* DescriptionLabel;
@@ -33,9 +35,13 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuButtonWidget* AcceptButton;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+	FText AcceptButtonLabel = FText::FromString("Accept");
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuButtonWidget* RevertButton;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+	FText RevertButtonLabel = FText::FromString("Revert");
 
 private:
 	UFUNCTION()
@@ -44,7 +50,12 @@ private:
 	UFUNCTION()
 	void HandleRevert();
 
-	float CurrentTimeRemaining;
-	bool bIsTimerActive = false;
-	FText BaseDescriptionText;
+	// Taimera funkcija, ko sauksim katru sekundi
+	void UpdateTimerTick();
+
+	FTimerHandle CountdownTimerHandle;
+	int32 SecondsRemaining;
+	FText CachedCategoryName;
+
+	void RefreshDescriptionText();
 };

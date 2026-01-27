@@ -56,20 +56,16 @@ void UGraphicsOptionsCategoryWidget::NativeOnInitialized()
 	{
 		UIManager = GI->GetSubsystem<UUIManagerSubsystem>();
 	}
-	if (ResolutionCombo)
-	{
-		ResolutionCombo->SetSelectedIndex(UIManager->GetPendingResolutionIndex());
-	}
+	
+}
 
-	if (WindowModeCombo)
-	{
-		WindowModeCombo->SetSelectedIndex(UIManager->GetPendingWindowMode());
-	}
-
-	if (QualityCombo)
-	{
-		QualityCombo->SetSelectedIndex(UIManager->GetPendingQuality());
-	}
+void UGraphicsOptionsCategoryWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	// Initialize dropdowns to current pending settings
+	ResolutionCombo->SetSelectedIndex(UIManager->GetPendingResolutionIndex());
+	WindowModeCombo->SetSelectedIndex(UIManager->GetPendingWindowMode());
+	QualityCombo->SetSelectedIndex(UIManager->GetPendingQuality());
 }
 
 void UGraphicsOptionsCategoryWidget::NativeDestruct()

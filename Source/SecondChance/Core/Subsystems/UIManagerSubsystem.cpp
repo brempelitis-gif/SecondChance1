@@ -31,13 +31,30 @@ void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			UIConfig = GI->UIConfig;
 		}
 	}
-	LoadAudioSettings();
 	
 	SupportedResolutions = {
 		{1920,1080},
 		{1600,900},
 		{1280,720}
 	};
+	LoadAudioSettings();
+	LoadInitialSettings();
+}
+void UUIManagerSubsystem::LoadInitialSettings()
+{
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+		// Ielādē pēdējos saglabātos iestatījumus no diska (.ini faila)
+		Settings->LoadSettings(true);
+		Settings->ApplySettings(false);
+	int32 Index = 0;
+	
+	Settings->GetScreenResolution() == SupportedResolutions[0] ? Index = 0 :
+	Settings->GetScreenResolution() == SupportedResolutions[1] ? Index = 1 :
+	Settings->GetScreenResolution() == SupportedResolutions[2] ? Index = 2 : 
+	PendingResolutionIndex = Index;
+
+	PendingWindowMode = static_cast<int32>(Settings->GetFullscreenMode());
+	PendingQuality = Settings->GetOverallScalabilityLevel();
 }
 
 void UUIManagerSubsystem::Deinitialize()
@@ -92,7 +109,6 @@ void UUIManagerSubsystem::ShowOptionsMenu()
 	if (!UIConfig || !UIConfig->OptionsMenuClass) return;
 
 	SetUIState(EUIState::Options);
-	//CreateAndShowWidget(UIConfig->OptionsMenuClass);
 }
 void UUIManagerSubsystem::ShowPauseMenu()
 {
@@ -355,6 +371,7 @@ void UUIManagerSubsystem::SetGraphicsQuality(int32 Index)
 void UUIManagerSubsystem::ApplyGraphicsSettings()
 {
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+
 	if (!Settings) return;
 
 	// Resolution
@@ -383,6 +400,13 @@ void UUIManagerSubsystem::CancelGraphicsSettings()
 {
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
+	if (Settings)
+	{
+		// Atceļ vizuālās izmaiņas un atgriež pēdējās saglabātās
+		Settings->LoadSettings(true);
+		Settings->ApplySettings(false);
+	}
+	/*
 	
 	Settings->SetScreenResolution(SupportedResolutions[CurrentResolutionIndex]);
 
@@ -394,9 +418,10 @@ void UUIManagerSubsystem::CancelGraphicsSettings()
 
 	// Restore quality
 	Settings->SetOverallScalabilityLevel(CurrentQuality);
-	Settings->ApplySettings(false);
-
+	//Settings->ApplySettings(false);
+	Settings->ApplySettings(true); // true = saglabāt diskā uzreiz
 	// Restore pending
+	*/
 	PendingResolutionIndex = CurrentResolutionIndex;
 	PendingWindowMode      = CurrentWindowMode;
 	PendingQuality         = CurrentQuality;
@@ -411,7 +436,26 @@ bool UUIManagerSubsystem::IsCategoryPending(ESettingsCategory Category) const
 {
 	return PendingCategories.Contains(Category);
 }
+/*
 // SetKeyBinding()
+void UUIManagerSubsystem::ApplyPendingSettings()
+{
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+	
+	if (Settings)
+	{
+		// 1. Apstiprina grafikas izmaiņas (rezolūcija, FPS limit, Scale)
+		if (PendingCategories.Contains(ESettingsCategory::Graphics))
+		{
+			Settings->ApplySettings(true); // true = saglabāt diskā uzreiz
+		}
+		
+		// 2. Audio un citu kategoriju saglabāšana (ja izmanto citu sistēmu)
+		// It kā SaveAudioSettings();
+	}
+
+	PendingCategories.Empty();
+}
 void UUIManagerSubsystem::ApplyPendingSettings()
 {
 	// Ja ir Graphics pending → PRASĀM confirm
@@ -431,7 +475,9 @@ void UUIManagerSubsystem::ApplyPendingSettings()
 	// Citādi var droši apply uzreiz
 	ApplyPendingSettings_Internal();
 }
-void UUIManagerSubsystem::ApplyPendingSettings_Internal()
+
+*/
+void UUIManagerSubsystem::ApplyPendingSettings()
 {
 	TArray<ESettingsCategory> Categories = PendingCategories.Array();
 
@@ -499,3 +545,5 @@ void UUIManagerSubsystem::CancelPendingSettings()
 // UIScale
 // ColorBlindMode
 // Subtitles
+
+

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CoreMinimal.h"
 #include "UIActions.h"
 #include "UIConfig.h"
 #include "Subsystems/GameInstanceSubsystem.h"
@@ -30,7 +31,7 @@ enum class EUIState : uint8
 	Options,
 	Pause
 };
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSettingsChanged, ESettingsCategory, Category);
 /* =====================================================
  * UI MANAGER SUBSYSTEM
  * ===================================================== */
@@ -40,6 +41,9 @@ class SECONDCHANCE_API UUIManagerSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
+private:
+	// Ielādē iestatījumus no diska spēles sākumā
+	void LoadInitialSettings();
 public:
 	/* =====================================================
 	 * CORE
@@ -91,8 +95,7 @@ public:
 		ESettingsCategory,
 		Category
 	);
-
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, Category = "Settings")
 	FOnSettingsChanged OnSettingsChanged;
 
 	UPROPERTY(BlueprintAssignable, Category="Settings")
@@ -121,6 +124,7 @@ public:
 	void CancelAudioSettings();
 
 	// Getters (UI)
+	// Pārbauda, vai konkrētajā kategorijā ir neapstiprinātas izmaiņas
 	UFUNCTION(BlueprintPure, Category="UI|Options")
 	bool IsCategoryPending(ESettingsCategory Category) const;
 	
@@ -181,16 +185,11 @@ public:
 	 * ===================================================== */
 	// TODO: Input rebinding
 	// Pending / Apply / Cancel
+	// Galvenās darbības
 	UFUNCTION(BlueprintCallable, Category="Settings")
 	void CancelPendingSettings();
 	UFUNCTION(BlueprintCallable, Category="Settings")
 	void ApplyPendingSettings();
-	UFUNCTION(BlueprintCallable, Category="Settings")
-	void ApplyPendingSettings_Internal();
-	/* =====================================================
-	 * FUTURE: ACCESSIBILITY SETTINGS
-	 * ===================================================== */
-	// TODO: UI Scale, Colorblind, Subtitles
 
 private:
 	/* =====================================================
@@ -226,11 +225,13 @@ private:
 	int32 CurrentWindowMode      = 0;
 	int32 CurrentQuality         = 2;
 
-	int32 PendingResolutionIndex = 0;
+	int32 PendingResolutionIndex = 1;
 	int32 PendingWindowMode      = 0;
 	int32 PendingQuality         = 2;
 
-	
+	/* =====================================================
+	 * PENDING CHANGES TRACKING
+	 * ===================================================== */
 	UPROPERTY()
 	TSet<ESettingsCategory> PendingCategories;
 	
@@ -239,6 +240,7 @@ private:
 	{
 		return PendingCategories.Num() > 0;
 	}
+	// Atzīmē kategoriju kā "dirty" (nepieciešams Apply)
 	void MarkCategoryPending(ESettingsCategory Category)
 	{
 		if (Category == ESettingsCategory::None) return;
