@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CoreMinimal.h"
 #include "UI/Base/UIBaseWidget.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "UIOptionsMenuBase.generated.h"
@@ -38,6 +39,16 @@ protected:
 	UMenuButtonWidget* GameplayTab;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
 	FText GameplayTabLabel = FText::FromString("Gameplay");
+
+	// --- Jauns: Popup loģika ---
+	UPROPERTY(EditAnywhere, Category = "UI|Settings")
+	TSubclassOf<class UUIConfirmationPopup> PopupClass;
+
+	UPROPERTY()
+	UUIConfirmationPopup* CachedPopup;
+
+	// --- Iekšējais stāvoklis ---
+	ESettingsCategory CurrentCategory = ESettingsCategory::Audio;
 
 	/* =======================
 	 * CONTENT SWITCHER
@@ -84,7 +95,7 @@ private:
 	void HandleSettingsChanged(ESettingsCategory ChangedCategory);
 	
 	// Set active category in the switcher
-	void SetActiveCategory(ESettingsCategory Category) const;
+	void SetActiveCategory(ESettingsCategory Category);
 
 protected:
 	// Update visibility of Apply/Cancel buttons based on pending changes

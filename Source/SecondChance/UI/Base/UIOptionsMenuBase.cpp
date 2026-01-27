@@ -2,13 +2,24 @@
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "Components/WidgetSwitcher.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/Base/ConfirmationPopUp/UIConfirmationPopup.h"
 
 void UUIOptionsMenuBase::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	UIManager = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
+	
+	// Jauns: Izveidojam Popup vienu reizi un paslēpjam
+	if (PopupClass && !CachedPopup)
+	{
+		CachedPopup = CreateWidget<UUIConfirmationPopup>(this, PopupClass);
+		CachedPopup->AddToViewport(100);
+		CachedPopup->HidePopup();
+	}
+	
 	BindButtons();
+	
 	if (UIManager)
 	{
 		UIManager->OnSettingsChanged.AddDynamic(this, &UUIOptionsMenuBase::HandleSettingsChanged);
@@ -73,8 +84,9 @@ void UUIOptionsMenuBase::BindButtons()
 	}
 }
 
-void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category) const
+void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
 {
+	CurrentCategory = Category;
 	if (!CategorySwitcher)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UUIOptionsMenuBase::SetActiveCategory - CategorySwitcher is null"));
@@ -97,6 +109,8 @@ void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category) const
 		return;
 	}
 	CategorySwitcher->SetActiveWidgetIndex(Index);
+	// Jauns noteikums: Pārslēdzot kategoriju, pogas pazūd, ja šajā kategorijā nav izmaiņu
+	UpdateActionButtonsVisibility();
 }
 
 void UUIOptionsMenuBase::HandleAudioTab()
@@ -121,13 +135,18 @@ void UUIOptionsMenuBase::HandleGameplayTab()
 
 void UUIOptionsMenuBase::HandleApply()
 {
-	if (!UIManager)
+	if (!UIManager) return;
+
+	if (CurrentCategory == ESettingsCategory::Graphics && CachedPopup)
 	{
-		return;;
-	}
-	if (UIManager->IsCategoryPending(ESettingsCategory::Graphics))
-	{
-		UIManager->OnConfirmSettingsRequired.Broadcast(ESettingsCategory::Graphics);
+		CachedPopup->OnConfirmed.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::ApplyPendingSettings);
+		CachedPopup->OnTimedOutOrCancelled.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::CancelPendingSettings);
+		
+		// Atjaunojam UI pēc popupa slēgšanas
+		CachedPopup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::UpdateActionButtonsVisibility);
+		CachedPopup->OnTimedOutOrCancelled.AddUniqueDynamic(this, &UUIOptionsMenuBase::UpdateActionButtonsVisibility);
+
+		CachedPopup->ShowPopup(FText::FromString("Graphics"), 15.0f);
 	}
 	else
 	{
@@ -138,10 +157,7 @@ void UUIOptionsMenuBase::HandleApply()
 
 void UUIOptionsMenuBase::HandleCancel()
 {
-	if (UIManager)
-	{
-		UIManager->CancelPendingSettings();
-	}
+	if (UIManager) UIManager->CancelPendingSettings();
 	//After cancelling, hide buttons until further changes are made
 	UpdateActionButtonsVisibility();
 }
@@ -151,13 +167,12 @@ void UUIOptionsMenuBase::HandleSettingsChanged(ESettingsCategory Category)
 }
 void UUIOptionsMenuBase::UpdateActionButtonsVisibility()
 {
-	if (!ApplyButton||!CancelButton)
-	{
-		return;
-	}
-	const bool bHasAudioPending    = UIManager ? UIManager->IsCategoryPending(ESettingsCategory::Audio) : false;
-	const bool bHasGraphicsPending    = UIManager ? UIManager->IsCategoryPending(ESettingsCategory::Graphics) : false;
-	const bool bShouldShow  = bHasAudioPending || bHasGraphicsPending;
-	CancelButton->SetVisibility((bShouldShow) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	ApplyButton->SetVisibility((bShouldShow) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	if (!ApplyButton || !CancelButton || !UIManager) return;
+
+	// Pārbauda tikai aktuālo sadaļu
+	bool bShow = UIManager->IsCategoryPending(CurrentCategory);
+	
+	ESlateVisibility Vis = bShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+	ApplyButton->SetVisibility(Vis);
+	CancelButton->SetVisibility(Vis);
 }
