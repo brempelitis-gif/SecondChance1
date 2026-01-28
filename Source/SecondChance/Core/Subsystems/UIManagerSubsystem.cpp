@@ -31,28 +31,46 @@ void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			UIConfig = GI->UIConfig;
 		}
 	}
-	
-	SupportedResolutions = {
-		{1920,1080},
-		{1600,900},
-		{1280,720}
-	};
 	LoadAudioSettings();
 	LoadInitialSettings();
 }
 void UUIManagerSubsystem::LoadInitialSettings()
 {
+	// 1. Ielādējam iestatījumus no diska
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
-		// Ielādē pēdējos saglabātos iestatījumus no diska (.ini faila)
-		Settings->LoadSettings(true);
+	if (Settings)
+	{
+		// Ielādē saglabātos iestatījumus no diska (.ini faila) (false = neizmantot noklusējuma vērtības)
+		Settings->LoadSettings(false);
+		// Uzreiz pielietojam tos, lai spēle sāktos ar pareizo rezolūciju/kvalitāti
 		Settings->ApplySettings(false);
-	int32 Index = 0;
+	}
+	SupportedResolutions = {
+		{1920,1080},
+		{1600,900},
+		{1280,720}
+	};
 	
-	Settings->GetScreenResolution() == SupportedResolutions[0] ? Index = 0 :
-	Settings->GetScreenResolution() == SupportedResolutions[1] ? Index = 1 :
-	Settings->GetScreenResolution() == SupportedResolutions[2] ? Index = 2 : 
-	PendingResolutionIndex = Index;
+	// 1. Iegūstam pašreizējo rezolūciju, kas ir saglabāta iestatījumos
+	FIntPoint CurrentRes = Settings->GetScreenResolution();
 
+	// 2. Pieņemot, ka tev ir TArray ar pieejamajām rezolūcijām (piem. SupportedResolutions)
+	// Mums ir jāatrod CurrentRes indekss šajā sarakstā.
+	int32 FoundIndex = INDEX_NONE;
+	for (int32 i = 0; i < SupportedResolutions.Num(); ++i)
+	{
+		if (SupportedResolutions[i] == CurrentRes)
+		{
+			FoundIndex = i;
+			break;
+		}
+	}
+
+	// 3. Ja atradām, uzstādām ComboBox sākuma vērtību
+	if (FoundIndex)
+	{
+		PendingResolutionIndex = FoundIndex;
+	}
 	PendingWindowMode = static_cast<int32>(Settings->GetFullscreenMode());
 	PendingQuality = Settings->GetOverallScalabilityLevel();
 }
@@ -133,7 +151,6 @@ void UUIManagerSubsystem::SetUIState(EUIState NewState)
 	{
 		return;
 	}
-
 	HideCurrentUI();
 	CurrentState = NewState;
 
@@ -386,7 +403,9 @@ void UUIManagerSubsystem::ApplyGraphicsSettings()
 	// Quality (0–3)
 	Settings->SetOverallScalabilityLevel(PendingQuality);
 
-	Settings->ApplySettings(false);
+	// ConfirmVideoMode nodrošina, ka rezolūcijas maiņa tiek apstiprināta
+	Settings->ConfirmVideoMode();
+	Settings->ApplySettings(true);
 	Settings->SaveSettings();
 
 	// Commit
@@ -404,24 +423,8 @@ void UUIManagerSubsystem::CancelGraphicsSettings()
 	{
 		// Atceļ vizuālās izmaiņas un atgriež pēdējās saglabātās
 		Settings->LoadSettings(true);
-		Settings->ApplySettings(false);
+		Settings->ApplySettings(true);
 	}
-	/*
-	
-	Settings->SetScreenResolution(SupportedResolutions[CurrentResolutionIndex]);
-
-	// Restore window mode
-	EWindowMode::Type Mode = EWindowMode::Fullscreen;
-	if (CurrentWindowMode == 1) Mode = EWindowMode::Windowed;
-	if (CurrentWindowMode == 2) Mode = EWindowMode::WindowedFullscreen;
-	Settings->SetFullscreenMode(Mode);
-
-	// Restore quality
-	Settings->SetOverallScalabilityLevel(CurrentQuality);
-	//Settings->ApplySettings(false);
-	Settings->ApplySettings(true); // true = saglabāt diskā uzreiz
-	// Restore pending
-	*/
 	PendingResolutionIndex = CurrentResolutionIndex;
 	PendingWindowMode      = CurrentWindowMode;
 	PendingQuality         = CurrentQuality;
@@ -436,47 +439,7 @@ bool UUIManagerSubsystem::IsCategoryPending(ESettingsCategory Category) const
 {
 	return PendingCategories.Contains(Category);
 }
-/*
-// SetKeyBinding()
-void UUIManagerSubsystem::ApplyPendingSettings()
-{
-	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
-	
-	if (Settings)
-	{
-		// 1. Apstiprina grafikas izmaiņas (rezolūcija, FPS limit, Scale)
-		if (PendingCategories.Contains(ESettingsCategory::Graphics))
-		{
-			Settings->ApplySettings(true); // true = saglabāt diskā uzreiz
-		}
-		
-		// 2. Audio un citu kategoriju saglabāšana (ja izmanto citu sistēmu)
-		// It kā SaveAudioSettings();
-	}
 
-	PendingCategories.Empty();
-}
-void UUIManagerSubsystem::ApplyPendingSettings()
-{
-	// Ja ir Graphics pending → PRASĀM confirm
-	if (PendingCategories.Contains(ESettingsCategory::Graphics))
-	{
-		if (!OnConfirmSettingsRequired.IsBound())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Confirm popup not bound, applying anyway"));
-			ApplyPendingSettings_Internal();
-			return;
-		}
-
-		OnConfirmSettingsRequired.Broadcast(ESettingsCategory::Graphics);
-		return;
-	}
-
-	// Citādi var droši apply uzreiz
-	ApplyPendingSettings_Internal();
-}
-
-*/
 void UUIManagerSubsystem::ApplyPendingSettings()
 {
 	TArray<ESettingsCategory> Categories = PendingCategories.Array();
@@ -545,5 +508,4 @@ void UUIManagerSubsystem::CancelPendingSettings()
 // UIScale
 // ColorBlindMode
 // Subtitles
-
 
