@@ -240,6 +240,7 @@ private:
 	{
 		return PendingCategories.Num() > 0;
 	}
+public:
 	// Atzīmē kategoriju kā "dirty" (nepieciešams Apply)
 	void MarkCategoryPending(ESettingsCategory Category)
 	{

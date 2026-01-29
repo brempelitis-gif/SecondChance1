@@ -1,71 +1,45 @@
+
 #include "UGraphicsOptionsCategoryWidget.h"
-#include "Components/ComboBoxString.h"
+#include "GameFramework/GameUserSettings.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
-#include "Kismet/GameplayStatics.h"
+#include "UI/Base/MenuCheckBox/MenuCheckBoxWidget.h"
 #include "UI/Base/MenuDropdown/MenuDropdownWidget.h"
+#include "UI/Base/MenuSlider/MenuSliderWidget.h"
 
 void UGraphicsOptionsCategoryWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
-
-	// Example default options so the UMG Designer shows them.
-	// Designers can override these in the UMenuDropdownWidget's DesignerOptions or in the UMG Blueprint.
-	if (ResolutionCombo)
-	{
-		TArray<FString> Resolutions = {
-			TEXT("1920x1080"),
-			TEXT("1600x900"),
-			TEXT("1280x720"),
-		};
-		ResolutionCombo->SetOptions(Resolutions);
-		ResolutionCombo->SetLabel(FText::FromString(TEXT("Resolution")));
-	}
-
-	if (WindowModeCombo)
-	{
-		TArray<FString> Modes = {
-			TEXT("Fullscreen"),
-			TEXT("Windowed"),
-			TEXT("Borderless")
-		};
-		WindowModeCombo->SetOptions(Modes);
-		WindowModeCombo->SetLabel(FText::FromString(TEXT("Window Mode")));
-	}
-
-	if (QualityCombo)
-	{
-		TArray<FString> Qualities = {
-			TEXT("Low"),
-			TEXT("Medium"),
-			TEXT("High"),
-			TEXT("Ultra")
-		};
-		QualityCombo->SetOptions(Qualities);
-		QualityCombo->SetLabel(FText::FromString(TEXT("Quality")));
-	}
-	// Bind dropdown events
-	BindDropdowns();
+	// Uzstādām tekstus Editora priekšskatījumam
+	if (ResolutionCombo) ResolutionCombo->SetLabel(ResolutionComboLabel);
+	if (QualityCombo) QualityCombo->SetLabel(QualityComboLabel);
+	if (WindowModeCombo) WindowModeCombo->SetLabel(WindowModeComboLabel);
+	if (VSyncCheckBox) VSyncCheckBox->SetLabel(VSyncCheckBoxLabel);
+	if (ResolutionScaleSlider) ResolutionScaleSlider->SetLabel(ResolutionScaleLabel);
 }
 
 void UGraphicsOptionsCategoryWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	// Cache UIManager
-	if (UGameInstance* GI = GetGameInstance())
+	// Piesaistām visus eventus
+	if (ResolutionCombo) ResolutionCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleResolutionChanged);
+	if (QualityCombo) QualityCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleQualityChanged);
+	if (WindowModeCombo) WindowModeCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleWindowModeChanged);
+	if (VSyncCheckBox) VSyncCheckBox->OnCheckStateChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleVSyncChanged);
+	if (ResolutionScaleSlider) ResolutionScaleSlider->OnValueChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleResolutionScaleChanged);
+
+	if (UIManager)
 	{
-		UIManager = GI->GetSubsystem<UUIManagerSubsystem>();
+		UIManager->OnSettingsChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings);
 	}
-	
 }
+
 
 void UGraphicsOptionsCategoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	// Initialize dropdowns to current pending settings
-	ResolutionCombo->SetSelectedIndex(UIManager->GetPendingResolutionIndex());
-	WindowModeCombo->SetSelectedIndex(UIManager->GetPendingWindowMode());
-	QualityCombo->SetSelectedIndex(UIManager->GetPendingQuality());
+	PopulateComboBoxes();
+	RefreshUIFromCurrentSettings(ESettingsCategory::Graphics);
 }
 
 void UGraphicsOptionsCategoryWidget::NativeDestruct()
@@ -87,35 +61,120 @@ void UGraphicsOptionsCategoryWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-/* === Handlers === */
-
-void UGraphicsOptionsCategoryWidget::BindDropdowns()
+void UGraphicsOptionsCategoryWidget::PopulateComboBoxes()
 {
-	ResolutionCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleResolutionChanged);
-	WindowModeCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleWindowModeChanged);
-	QualityCombo->OnSelectionChanged.AddDynamic(this, &UGraphicsOptionsCategoryWidget::HandleQualityChanged);
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+	if (!Settings) return;
+
+	// 1. Rezolūcijas
+	ResolutionCombo->ClearOptions();
+	ResolutionsArray.Empty();
+	FScreenResolutionArray ScreenResolutions;
+	if (RHIGetAvailableResolutions(ScreenResolutions, true))
+	{
+		for (const FScreenResolutionRHI& Res : ScreenResolutions)
+		{
+			FIntPoint ResPoint(Res.Width, Res.Height);
+			if (!ResolutionsArray.Contains(ResPoint))
+			{
+				ResolutionsArray.Add(ResPoint);
+				ResolutionCombo->AddOption(FString::Printf(TEXT("%d x %d"), Res.Width, Res.Height));
+			}
+		}
+	}
+
+	// 2. Kvalitāte
+	QualityCombo->ClearOptions();
+	for (const FString& L : QualityLabels) QualityCombo->AddOption(L);
+
+	// 3. Window Mode
+	WindowModeCombo->ClearOptions();
+	for (const FString& L : WindowModeLabels) WindowModeCombo->AddOption(L);
 }
 
-void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(int32 SelectedIndex)
+void UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings(ESettingsCategory ChangedCategory)
 {
-	if (UIManager)
+	if (ChangedCategory != ESettingsCategory::Graphics) return;
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+	if (!Settings) return;
+
+	// Atjaunojam Rezolūciju
+	int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
+	if (ResolutionCombo && ResIndex != INDEX_NONE) ResolutionCombo->SetSelectedIndex(ResIndex);
+
+	// Atjaunojam Kvalitāti
+	if (QualityCombo) QualityCombo->SetSelectedIndex(Settings->GetOverallScalabilityLevel());
+
+	// Atjaunojam Window Mode
+	if (WindowModeCombo) WindowModeCombo->SetSelectedIndex((int32)Settings->GetFullscreenMode());
+
+	// Atjaunojam VSync
+	if (VSyncCheckBox) VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
+
+	// Atjaunojam Resolution Scale (0.0 - 1.0 diapazonā spēlei, slider parasti 0-100 vai 0-1)
+	if (ResolutionScaleSlider) ResolutionScaleSlider->SetValue(Settings->GetResolutionScaleNormalized());
+	
+	// Atjaunojam VSync izmantojot jauno klasi
+	if (VSyncCheckBox) VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
+}
+// --- Eventu realizācija ---
+
+void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType == ESelectInfo::Direct) return;
+	int32 SelectedIndex = ResolutionCombo->GetSelectedIndex();
+	if (ResolutionsArray.IsValidIndex(SelectedIndex)&& UIManager)
 	{
-		UIManager->SetResolution(SelectedIndex);
+		if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+		{
+			Settings->SetScreenResolution(ResolutionsArray[SelectedIndex]);
+			UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
+		}
 	}
 }
 
-void UGraphicsOptionsCategoryWidget::HandleWindowModeChanged(int32 SelectedIndex)
+void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (UIManager)
+	if (SelectionType == ESelectInfo::Direct) return;
+	int32 SelectedIndex = QualityCombo->GetSelectedIndex();
+	if (QualityLabels.IsValidIndex(SelectedIndex)&& UIManager)
 	{
-		UIManager->SetWindowMode(SelectedIndex);
+		if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+		{
+			Settings->SetOverallScalabilityLevel(SelectedIndex);
+			UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
+		}
 	}
 }
 
-void UGraphicsOptionsCategoryWidget::HandleQualityChanged(int32 SelectedIndex)
+void UGraphicsOptionsCategoryWidget::HandleWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (UIManager)
+	if (SelectionType == ESelectInfo::Direct) return;
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+	if (Settings && UIManager)
 	{
-		UIManager->SetGraphicsQuality(SelectedIndex);
+		// EWindowMode: 0 = Fullscreen, 1 = WindowedFullscreen, 2 = Windowed
+		Settings->SetFullscreenMode((EWindowMode::Type)WindowModeCombo->GetSelectedIndex());
+		UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
+	}
+}
+
+void UGraphicsOptionsCategoryWidget::HandleVSyncChanged(bool bIsChecked)
+{
+	if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+	{
+		Settings->SetVSyncEnabled(bIsChecked);
+		if (UIManager) UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
+	}
+}
+
+void UGraphicsOptionsCategoryWidget::HandleResolutionScaleChanged(float Value)
+{
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+	if (Settings && UIManager)
+	{
+		// Iestatām "Resolution Scale" (piem. 0.7 = 70% no natīvās rezolūcijas)
+		Settings->SetResolutionScaleNormalized(Value);
+		UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
 	}
 }

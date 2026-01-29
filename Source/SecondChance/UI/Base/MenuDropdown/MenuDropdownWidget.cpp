@@ -11,12 +11,6 @@ void UMenuDropdownWidget::NativePreConstruct()
 	{
 		Label->SetText(DesignerLabel);
 	}
-
-	// If designer options are provided, populate them for preview/runtime defaults.
-	if (DesignerOptions.Num() > 0 && ComboBox)
-	{
-		SetOptions(DesignerOptions);
-	}
 }
 
 void UMenuDropdownWidget::NativeOnInitialized()
@@ -30,6 +24,36 @@ void UMenuDropdownWidget::NativeOnInitialized()
 		);
 	}
 }
+
+
+
+
+void UMenuDropdownWidget::ClearOptions()
+{
+	if (ComboBox)
+	{
+		ComboBox->ClearOptions();
+		CachedOptions.Empty();
+	}
+}
+void UMenuDropdownWidget::AddOption(const FString& Option) const
+{
+	if (ComboBox) ComboBox->AddOption(Option);
+}
+int32 UMenuDropdownWidget::GetSelectedIndex() const
+{
+	return ComboBox ? ComboBox->GetSelectedIndex() : -1;
+}
+
+
+
+
+void UMenuDropdownWidget::SetSelectedIndex(int32 Index)
+{
+	if (ComboBox) ComboBox->SetSelectedIndex(Index);
+}
+
+
 
 void UMenuDropdownWidget::SetOptions(const TArray<FString>& InOptions)
 {
@@ -49,21 +73,7 @@ void UMenuDropdownWidget::SetOptions(const TArray<FString>& InOptions)
 	}
 }
 
-void UMenuDropdownWidget::SetSelectedIndex(int32 Index)
-{
-	if (!ComboBox) return;
-	if (!CachedOptions.IsValidIndex(Index)) return;
 
-	ComboBox->SetSelectedOption(CachedOptions[Index]);
-}
-
-int32 UMenuDropdownWidget::GetSelectedIndex() const
-{
-	if (!ComboBox) return INDEX_NONE;
-
-	const FString Selected = ComboBox->GetSelectedOption();
-	return CachedOptions.IndexOfByKey(Selected);
-}
 
 void UMenuDropdownWidget::SetLabel(const FText& InText)
 {
@@ -72,15 +82,14 @@ void UMenuDropdownWidget::SetLabel(const FText& InText)
 		Label->SetText(InText);
 	}
 }
-
-void UMenuDropdownWidget::HandleSelectionChanged(
-	FString SelectedItem,
-	ESelectInfo::Type SelectType
-)
+void UMenuDropdownWidget::HandleSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	const int32 Index = CachedOptions.IndexOfByKey(SelectedItem);
-	if (Index != INDEX_NONE)
-	{
-		OnSelectionChanged.Broadcast(Index);
-	}
+	// Pārsūtam notikumu tālāk uz GraphicsWidget
+	OnSelectionChanged.Broadcast(SelectedItem, SelectionType);
 }
+
+
+
+
+
+

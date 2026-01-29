@@ -19,7 +19,9 @@ public class SecondChance : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+			"RHI",
+			"RenderCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

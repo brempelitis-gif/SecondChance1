@@ -1,28 +1,27 @@
 #pragma once
 
 #include "UI/Base/UIBaseWidget.h"
+#include "CoreMinimal.h"
+#include "Components/ComboBoxString.h"
 #include "MenuDropdownWidget.generated.h"
 
 class UComboBoxString;
 class UTextBlock;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
-	FOnMenuDropdownChanged,
-	int32,
-	SelectedIndex
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+	FOnComboBoxSelectionEvent,
+	FString,
+	SelectedIItem,
+	ESelectInfo::Type, SelectType
 );
-
-/**
- * Dropdown wrapper used across options panels.
- * - DesignerOptions and DesignerLabel are editable in the Widget Blueprint defaults.
- * - NativePreConstruct applies Designer values so they appear in the UMG Designer preview.
- */
 UCLASS()
 class SECONDCHANCE_API UMenuDropdownWidget : public UUIBaseWidget
 {
 	GENERATED_BODY()
 
 public:
+	void ClearOptions();
+	void AddOption(const FString& Option) const;
 	/* Set options programmatically (or in NativePreConstruct from DesignerOptions) */
 	UFUNCTION(BlueprintCallable, Category="MenuDropdown")
 	void SetOptions(const TArray<FString>& InOptions);
@@ -39,8 +38,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="MenuDropdown")
 	void SetLabel(const FText& InText);
 
-	UPROPERTY(BlueprintAssignable, Category="MenuDropdown")
-	FOnMenuDropdownChanged OnSelectionChanged;
+	// Delegāts, kuram pieslēgsies GraphicsWidget
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnComboBoxSelectionEvent OnSelectionChanged;
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -67,3 +67,5 @@ private:
 	/* Local cache of options to map selected string -> index */
 	TArray<FString> CachedOptions;
 };
+
+
