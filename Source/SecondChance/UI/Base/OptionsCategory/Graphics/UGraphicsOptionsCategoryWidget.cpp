@@ -98,6 +98,43 @@ void UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings(ESettingsCateg
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
 
+	// --- SĀKAS LABOJUMS ---
+	bIsRefreshing = true; // Bloķējam MarkCategoryPending izsaukšanu
+
+	// Atjaunojam Rezolūciju
+	int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
+	if (ResolutionCombo && ResIndex != INDEX_NONE) 
+	{
+		ResolutionCombo->SetSelectedIndex(ResIndex);
+	}
+
+	// Atjaunojam Kvalitāti
+	if (QualityCombo) 
+	{
+		QualityCombo->SetSelectedIndex(Settings->GetOverallScalabilityLevel());
+	}
+
+	// Atjaunojam Window Mode
+	if (WindowModeCombo) 
+	{
+		WindowModeCombo->SetSelectedIndex((int32)Settings->GetFullscreenMode());
+	}
+
+	// Atjaunojam VSync
+	if (VSyncCheckBox) 
+	{
+		VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
+	}
+
+	// Atjaunojam Resolution Scale
+	if (ResolutionScaleSlider) 
+	{
+		ResolutionScaleSlider->SetValue(Settings->GetResolutionScaleNormalized());
+	}
+
+	bIsRefreshing = false; // Atbloķējam
+	// --- BEIDZAS LABOJUMS ---
+	/*
 	// Atjaunojam Rezolūciju
 	int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
 	if (ResolutionCombo && ResIndex != INDEX_NONE) ResolutionCombo->SetSelectedIndex(ResIndex);
@@ -115,19 +152,21 @@ void UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings(ESettingsCateg
 	if (ResolutionScaleSlider) ResolutionScaleSlider->SetValue(Settings->GetResolutionScaleNormalized());
 	
 	// Atjaunojam VSync izmantojot jauno klasi
-	if (VSyncCheckBox) VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
+	if (VSyncCheckBox) VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());*/
 }
 // --- Eventu realizācija ---
 
 void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (SelectionType == ESelectInfo::Direct) return;
-	int32 SelectedIndex = ResolutionCombo->GetSelectedIndex();
-	if (ResolutionsArray.IsValidIndex(SelectedIndex)&& UIManager)
+	if (SelectionType == ESelectInfo::Direct || bIsRefreshing) return;
+    
+	int32 Index = ResolutionCombo->GetSelectedIndex();
+	if (ResolutionsArray.IsValidIndex(Index))
 	{
 		if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
 		{
-			Settings->SetScreenResolution(ResolutionsArray[SelectedIndex]);
+			// Mēs pasakām, kādu rezolūciju gribēsim, bet vēl neapstiprinām
+			Settings->SetScreenResolution(ResolutionsArray[Index]);
 			UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
 		}
 	}
@@ -135,7 +174,8 @@ void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(FString SelectedIte
 
 void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (SelectionType == ESelectInfo::Direct) return;
+	if (bIsRefreshing) return; // <-- PIEVIENOTS
+	//if (SelectionType == ESelectInfo::Direct) return;
 	int32 SelectedIndex = QualityCombo->GetSelectedIndex();
 	if (QualityLabels.IsValidIndex(SelectedIndex)&& UIManager)
 	{
@@ -149,7 +189,8 @@ void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, 
 
 void UGraphicsOptionsCategoryWidget::HandleWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (SelectionType == ESelectInfo::Direct) return;
+	if (bIsRefreshing) return; // <-- PIEVIENOTS
+	//if (SelectionType == ESelectInfo::Direct) return;
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (Settings && UIManager)
 	{
@@ -161,15 +202,17 @@ void UGraphicsOptionsCategoryWidget::HandleWindowModeChanged(FString SelectedIte
 
 void UGraphicsOptionsCategoryWidget::HandleVSyncChanged(bool bIsChecked)
 {
+	if (bIsRefreshing) return; // <-- PIEVIENOTS
 	if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
 	{
 		Settings->SetVSyncEnabled(bIsChecked);
-		if (UIManager) UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
+		UIManager->MarkCategoryPending(ESettingsCategory::Graphics);
 	}
 }
 
 void UGraphicsOptionsCategoryWidget::HandleResolutionScaleChanged(float Value)
 {
+	if (bIsRefreshing) return; // <-- PIEVIENOTS
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (Settings && UIManager)
 	{

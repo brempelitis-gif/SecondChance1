@@ -64,6 +64,8 @@ protected:
 
 private:
 	void PopulateComboBoxes();
+	
+	bool bIsRefreshing = false;
 };
 
 

@@ -390,7 +390,18 @@ void UUIManagerSubsystem::ApplyGraphicsSettings()
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 
 	if (!Settings) return;
+	// 1. Šis paņem visas vērtības, ko mēs sabāzām ar "Set..." funkcijām logrīkā
+	// un mēģina tās aktivizēt.
+	Settings->ApplySettings(true); 
 
+	// 2. Ja rezolūcija tika mainīta, ConfirmVideoMode to nofiksē, 
+	// lai tā neatlēktu atpakaļ.
+	Settings->ConfirmVideoMode();
+		
+	// 3. Jebkurā gadījumā drošībai saglabājam vēlreiz diskā
+	Settings->SaveSettings();
+	
+/*
 	// Resolution
 	Settings->SetScreenResolution(SupportedResolutions[PendingResolutionIndex]);
 
@@ -412,11 +423,26 @@ void UUIManagerSubsystem::ApplyGraphicsSettings()
 	CurrentResolutionIndex = PendingResolutionIndex;
 	CurrentWindowMode      = PendingWindowMode;
 	CurrentQuality         = PendingQuality;
-
+*/
 	ClearCategoryPending(ESettingsCategory::Graphics);
+	
+	// Broadcast visām kategorijām, lai pogas Apply/Cancel pazustu
+	OnSettingsChanged.Broadcast(ESettingsCategory::Graphics);
 }
 void UUIManagerSubsystem::CancelGraphicsSettings()
 {
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+	if (Settings)
+	{
+		// Ielādējam pēdējo veiksmīgi saglabāto stāvokli no faila
+		Settings->LoadSettings(true);
+		Settings->ApplySettings(false);
+	}
+
+	ClearCategoryPending(ESettingsCategory::Graphics);
+	OnSettingsChanged.Broadcast(ESettingsCategory::Graphics);
+
+	/*
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
 	if (Settings)
@@ -430,6 +456,7 @@ void UUIManagerSubsystem::CancelGraphicsSettings()
 	PendingQuality         = CurrentQuality;
 
 	ClearCategoryPending(ESettingsCategory::Graphics);
+	*/
 }
 
 // ============================================================
