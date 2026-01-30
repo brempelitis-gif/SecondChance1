@@ -66,7 +66,7 @@ void UGraphicsOptionsCategoryWidget::PopulateComboBoxes()
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
 
-	// 1. Rezolūcijas
+	// 1. Rezolūcijas (Dinamiski no RHI)
 	ResolutionCombo->ClearOptions();
 	ResolutionsArray.Empty();
 	FScreenResolutionArray ScreenResolutions;
@@ -98,14 +98,14 @@ void UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings(ESettingsCateg
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
 
-	// --- SĀKAS LABOJUMS ---
-	bIsRefreshing = true; // Bloķējam MarkCategoryPending izsaukšanu
+	bIsRefreshing = true; // Svarīgi: Paceļam karogu, lai handleri ignorētu šīs izmaiņas
 
 	// Atjaunojam Rezolūciju
-	int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
-	if (ResolutionCombo && ResIndex != INDEX_NONE) 
+	
+	if (ResolutionCombo)
 	{
-		ResolutionCombo->SetSelectedIndex(ResIndex);
+		int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
+		if (ResIndex != INDEX_NONE) ResolutionCombo->SetSelectedIndex(ResIndex);
 	}
 
 	// Atjaunojam Kvalitāti
@@ -133,26 +133,6 @@ void UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings(ESettingsCateg
 	}
 
 	bIsRefreshing = false; // Atbloķējam
-	// --- BEIDZAS LABOJUMS ---
-	/*
-	// Atjaunojam Rezolūciju
-	int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
-	if (ResolutionCombo && ResIndex != INDEX_NONE) ResolutionCombo->SetSelectedIndex(ResIndex);
-
-	// Atjaunojam Kvalitāti
-	if (QualityCombo) QualityCombo->SetSelectedIndex(Settings->GetOverallScalabilityLevel());
-
-	// Atjaunojam Window Mode
-	if (WindowModeCombo) WindowModeCombo->SetSelectedIndex((int32)Settings->GetFullscreenMode());
-
-	// Atjaunojam VSync
-	if (VSyncCheckBox) VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
-
-	// Atjaunojam Resolution Scale (0.0 - 1.0 diapazonā spēlei, slider parasti 0-100 vai 0-1)
-	if (ResolutionScaleSlider) ResolutionScaleSlider->SetValue(Settings->GetResolutionScaleNormalized());
-	
-	// Atjaunojam VSync izmantojot jauno klasi
-	if (VSyncCheckBox) VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());*/
 }
 // --- Eventu realizācija ---
 
@@ -174,8 +154,8 @@ void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(FString SelectedIte
 
 void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (bIsRefreshing) return; // <-- PIEVIENOTS
-	//if (SelectionType == ESelectInfo::Direct) return;
+	if (bIsRefreshing || SelectionType == ESelectInfo::Direct) return;
+	
 	int32 SelectedIndex = QualityCombo->GetSelectedIndex();
 	if (QualityLabels.IsValidIndex(SelectedIndex)&& UIManager)
 	{
@@ -189,8 +169,8 @@ void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, 
 
 void UGraphicsOptionsCategoryWidget::HandleWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (bIsRefreshing) return; // <-- PIEVIENOTS
-	//if (SelectionType == ESelectInfo::Direct) return;
+	if (bIsRefreshing || SelectionType == ESelectInfo::Direct) return;
+	
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (Settings && UIManager)
 	{
@@ -202,7 +182,8 @@ void UGraphicsOptionsCategoryWidget::HandleWindowModeChanged(FString SelectedIte
 
 void UGraphicsOptionsCategoryWidget::HandleVSyncChanged(bool bIsChecked)
 {
-	if (bIsRefreshing) return; // <-- PIEVIENOTS
+	if (bIsRefreshing) return;
+	
 	if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
 	{
 		Settings->SetVSyncEnabled(bIsChecked);
@@ -212,7 +193,8 @@ void UGraphicsOptionsCategoryWidget::HandleVSyncChanged(bool bIsChecked)
 
 void UGraphicsOptionsCategoryWidget::HandleResolutionScaleChanged(float Value)
 {
-	if (bIsRefreshing) return; // <-- PIEVIENOTS
+	if (bIsRefreshing) return;
+	
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (Settings && UIManager)
 	{

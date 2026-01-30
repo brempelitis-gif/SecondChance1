@@ -45,34 +45,7 @@ void UUIManagerSubsystem::LoadInitialSettings()
 		// Uzreiz pielietojam tos, lai spēle sāktos ar pareizo rezolūciju/kvalitāti
 		Settings->ApplySettings(false);
 	}
-	SupportedResolutions = {
-		{1920,1080},
-		{1600,900},
-		{1280,720}
-	};
 	
-	// 1. Iegūstam pašreizējo rezolūciju, kas ir saglabāta iestatījumos
-	FIntPoint CurrentRes = Settings->GetScreenResolution();
-
-	// 2. Pieņemot, ka tev ir TArray ar pieejamajām rezolūcijām (piem. SupportedResolutions)
-	// Mums ir jāatrod CurrentRes indekss šajā sarakstā.
-	int32 FoundIndex = INDEX_NONE;
-	for (int32 i = 0; i < SupportedResolutions.Num(); ++i)
-	{
-		if (SupportedResolutions[i] == CurrentRes)
-		{
-			FoundIndex = i;
-			break;
-		}
-	}
-
-	// 3. Ja atradām, uzstādām ComboBox sākuma vērtību
-	if (FoundIndex)
-	{
-		PendingResolutionIndex = FoundIndex;
-	}
-	PendingWindowMode = static_cast<int32>(Settings->GetFullscreenMode());
-	PendingQuality = Settings->GetOverallScalabilityLevel();
 }
 
 void UUIManagerSubsystem::Deinitialize()
@@ -368,23 +341,6 @@ void UUIManagerSubsystem::LoadAudioSettings()
 // ============================================================
 // GRAPHICS SETTINGS
 // ============================================================
-void UUIManagerSubsystem::SetResolution(int32 Index)
-{
-	PendingResolutionIndex = Index;
-	MarkCategoryPending(ESettingsCategory::Graphics);
-}
-
-void UUIManagerSubsystem::SetWindowMode(int32 Index)
-{
-	PendingWindowMode = Index;
-	MarkCategoryPending(ESettingsCategory::Graphics);
-}
-
-void UUIManagerSubsystem::SetGraphicsQuality(int32 Index)
-{
-	PendingQuality = Index;
-	MarkCategoryPending(ESettingsCategory::Graphics);
-}
 void UUIManagerSubsystem::ApplyGraphicsSettings()
 {
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
@@ -401,29 +357,6 @@ void UUIManagerSubsystem::ApplyGraphicsSettings()
 	// 3. Jebkurā gadījumā drošībai saglabājam vēlreiz diskā
 	Settings->SaveSettings();
 	
-/*
-	// Resolution
-	Settings->SetScreenResolution(SupportedResolutions[PendingResolutionIndex]);
-
-	// Window Mode
-	EWindowMode::Type Mode = EWindowMode::Fullscreen;
-	if (PendingWindowMode == 1) Mode = EWindowMode::Windowed;
-	if (PendingWindowMode == 2) Mode = EWindowMode::WindowedFullscreen;
-	Settings->SetFullscreenMode(Mode);
-
-	// Quality (0–3)
-	Settings->SetOverallScalabilityLevel(PendingQuality);
-
-	// ConfirmVideoMode nodrošina, ka rezolūcijas maiņa tiek apstiprināta
-	Settings->ConfirmVideoMode();
-	Settings->ApplySettings(true);
-	Settings->SaveSettings();
-
-	// Commit
-	CurrentResolutionIndex = PendingResolutionIndex;
-	CurrentWindowMode      = PendingWindowMode;
-	CurrentQuality         = PendingQuality;
-*/
 	ClearCategoryPending(ESettingsCategory::Graphics);
 	
 	// Broadcast visām kategorijām, lai pogas Apply/Cancel pazustu
@@ -441,22 +374,6 @@ void UUIManagerSubsystem::CancelGraphicsSettings()
 
 	ClearCategoryPending(ESettingsCategory::Graphics);
 	OnSettingsChanged.Broadcast(ESettingsCategory::Graphics);
-
-	/*
-	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
-	if (!Settings) return;
-	if (Settings)
-	{
-		// Atceļ vizuālās izmaiņas un atgriež pēdējās saglabātās
-		Settings->LoadSettings(true);
-		Settings->ApplySettings(true);
-	}
-	PendingResolutionIndex = CurrentResolutionIndex;
-	PendingWindowMode      = CurrentWindowMode;
-	PendingQuality         = CurrentQuality;
-
-	ClearCategoryPending(ESettingsCategory::Graphics);
-	*/
 }
 
 // ============================================================

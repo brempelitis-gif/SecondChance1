@@ -1,9 +1,10 @@
 #pragma once
 
+#include "CoreMinimal.h"
 #include "UI/Base/OptionsCategory/OptionsCategoryBaseWidget.h"
-#include "Components/Slider.h"
 #include "UGraphicsOptionsCategoryWidget.generated.h"
 
+// Forward declarations, lai nav jāiekļauj headeri šeit
 class UMenuDropdownWidget;
 class UUIManagerSubsystem;
 class UMenuSliderWidget;

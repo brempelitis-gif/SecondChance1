@@ -52,8 +52,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI", meta=(AllowPrivateAccess="true"))
 	UUIConfig* UIConfig;
 
-	UPROPERTY()
-	TArray<FIntPoint> SupportedResolutions;
 	
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
@@ -152,30 +150,16 @@ public:
 	/* =====================================================
 	 * GRAPHICS SETTINGS
 	 * ===================================================== */
-	
-	UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
-	void SetResolution(int32 Index);
-
-	UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
-	void SetWindowMode(int32 Index);
-
-	UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
-	void SetGraphicsQuality(int32 Index);
 
 	UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
 	void ApplyGraphicsSettings();
 
 	UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
 	void CancelGraphicsSettings();
-
-	UFUNCTION(BlueprintCallable, Category="UI|Graphics")
-	int32 GetPendingResolutionIndex() const { return PendingResolutionIndex; }
-
-	UFUNCTION(BlueprintCallable, Category="UI|Graphics")
-	int32 GetPendingWindowMode() const { return PendingWindowMode; }
-
-	UFUNCTION(BlueprintCallable, Category="UI|Graphics")
-	int32 GetPendingQuality() const { return PendingQuality; }
+	
+	/* =====================================================
+	 * AUDIO INTERNALS
+	 * ===================================================== */
 	// Internal audio apply
 	void SetMasterVolume(float Value) const;
 	void SetMusicVolume(float Value) const;
@@ -221,14 +205,7 @@ private:
 	 * GRAPHICS STATE
 	 * ===================================================== */
 
-	int32 CurrentResolutionIndex = 0;
-	int32 CurrentWindowMode      = 0;
-	int32 CurrentQuality         = 2;
-
-	int32 PendingResolutionIndex = 1;
-	int32 PendingWindowMode      = 0;
-	int32 PendingQuality         = 2;
-
+	
 	/* =====================================================
 	 * PENDING CHANGES TRACKING
 	 * ===================================================== */
