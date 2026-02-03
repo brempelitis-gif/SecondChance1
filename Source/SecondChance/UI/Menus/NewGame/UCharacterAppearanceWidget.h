@@ -5,11 +5,14 @@
 #include "UI/Menus/NewGame/ACharacterPreviewActor.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h" // Tavs Button include
 #include "UI/Base/MenuSlider/MenuSliderWidget.h" // Tavs Slider include
+#include "UI/Base/MenuEditableText/UMenuEditableTextWidget.h"
 #include "UCharacterAppearanceWidget.generated.h"
 
 class UMenuDropdownWidget;
-class UEditableText;
+class UMenuEditableTextWidget;
 
+// Definējam delegātu faila augšā
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStepNavigationRequested);
 UCLASS()
 class SECONDCHANCE_API UCharacterAppearanceWidget : public UUserWidget
 {
@@ -21,13 +24,16 @@ protected:
 
 	// --- UI Elementi (Tavas klases) ---
 	UPROPERTY(meta = (BindWidget))
-	UEditableText* NameInput;
+	UMenuEditableTextWidget* NameInput;
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuDropdownWidget* GenderCombo;
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuSliderWidget* HeightSlider;
+
+	UPROPERTY(meta = (BindWidget))
+	class UMenuSliderWidget* WeightSlider;
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuButtonWidget* RotateLeftBtn;
@@ -48,6 +54,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
 	FText HeightLabelText = FText::FromString("Height");
 
+	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
+	FText NameLabelText = FText::FromString("Name");
+
+	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
+	FText WeightLabelText = FText::FromString("Weight");
 	// --- Dati ---
 	FCharacterCustomizationData CurrentData;
     
@@ -58,6 +69,7 @@ protected:
 	UFUNCTION() void HandleNameChanged(const FText& Text);
 	UFUNCTION() void HandleGenderChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 	UFUNCTION() void HandleHeightChanged(float Value);
+	UFUNCTION() void HandleWeightChanged(float Value);
 	UFUNCTION() void HandleRotateLeft();
 	UFUNCTION() void HandleRotateRight();
 	UFUNCTION() void HandleBackClicked();
@@ -65,4 +77,7 @@ protected:
 
 private:
 	void FindPreviewActor();
+public:
+	UPROPERTY(BlueprintAssignable)
+	FOnStepNavigationRequested OnNextStepRequested;
 };

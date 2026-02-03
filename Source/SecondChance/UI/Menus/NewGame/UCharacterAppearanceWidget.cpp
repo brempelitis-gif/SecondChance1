@@ -10,9 +10,10 @@ void UCharacterAppearanceWidget::NativePreConstruct()
     Super::NativePreConstruct();
     
     // Uzstādām tekstus izmantojot tavas klases metodes
+    if (NameInput) NameInput->SetLabel(NameLabelText);
     if (GenderCombo) GenderCombo->SetLabel(GenderLabelText);
     if (HeightSlider) HeightSlider->SetLabel(HeightLabelText);
-    
+    if (WeightSlider) WeightSlider->SetLabel(WeightLabelText);
     // Ja tavām pogām ir SetText funkcija:
     if (BackBtn) BackBtn->SetLabel(FText::FromString("Back"));
     if (NextBtn) NextBtn->SetLabel(FText::FromString("Next"));
@@ -32,8 +33,11 @@ void UCharacterAppearanceWidget::NativeOnInitialized()
     
     // 3. Slider (Height) - Izmantojam tavu OnValueChanged delegātu
     if (HeightSlider) HeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleHeightChanged);
+
+    // 4. Slider (Weight) - Izmantojam tavu OnValueChanged delegātu
+    if (WeightSlider) WeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleWeightChanged);
     
-    // 4. Pogas - Izmanto savu pogu delegātu (piem. OnButtonClicked)
+    // 5. Pogas - Izmanto savu pogu delegātu (piem. OnButtonClicked)
     if (RotateLeftBtn) RotateLeftBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateLeft);
     if (RotateRightBtn) RotateRightBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateRight);
     
@@ -73,6 +77,12 @@ void UCharacterAppearanceWidget::HandleHeightChanged(float Value)
     if (CachedPreviewActor) CachedPreviewActor->UpdatePreview(CurrentData);
 }
 
+void UCharacterAppearanceWidget::HandleWeightChanged(float Value)
+{
+    CurrentData.WeightScale = Value;
+    if (CachedPreviewActor) CachedPreviewActor->UpdatePreview(CurrentData);
+}
+
 void UCharacterAppearanceWidget::HandleRotateLeft()
 {
     if (CachedPreviewActor) CachedPreviewActor->AddActorLocalRotation(FRotator(0, -15, 0));
@@ -92,4 +102,6 @@ void UCharacterAppearanceWidget::HandleNextClicked()
 {
     // Šeit vēlāk notiks pāreja uz Skill Tree
     GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Switching to Skill Tree..."));
+    // Tā vietā, lai šeit darītu visu loģiku, mēs vienkārši "paziņojam" Masteram
+    OnNextStepRequested.Broadcast();
 }

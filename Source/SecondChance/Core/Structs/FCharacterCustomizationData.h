@@ -1,4 +1,6 @@
 #pragma once
+#include "CoreMinimal.h"
+#include "FCharacterCustomizationData.generated.h"
 
 USTRUCT(BlueprintType)
 struct FCharacterCustomizationData
