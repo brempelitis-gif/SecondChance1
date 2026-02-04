@@ -9,9 +9,6 @@ void UMyGameInstance::Init()
 	{
 		// Piesaistām Config
 		UIManager->UIConfig = UIConfig;
-
-		// Automātiski startē splash
-		UIManager->ShowSplashScreen();
 	}
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UI/Base/UIBaseWidget.h"
+#include "Core/Enums/ESettingsCategory.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "OptionsCategoryBaseWidget.generated.h"
 
