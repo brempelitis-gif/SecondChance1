@@ -1,125 +1,89 @@
 #include "UI/Base/OptionsCategory/Audio/UAudioOptionsCategoryWidget.h"
-#include "Components/Slider.h"
-#include "Components/TextBlock.h"
-#include "Core/Subsystems/UIManagerSubsystem.h"
-#include "Kismet/GameplayStatics.h"
+
+#include "Components/PanelWidget.h"
 #include "UI/Base/MenuSlider/MenuSliderWidget.h"
+#include "UI/Menus/Options/OptionsBaseWidget.h" // Nepieciešams castam
 
 void UAudioOptionsCategoryWidget::NativeOnInitialized()
 {
-	Super::NativeOnInitialized();
+    Super::NativeOnInitialized();
 
-	// UIManager is set in UOptionsCategoryBaseWidget::NativeOnInitialized, but be safe:
-	if (!UIManager)
-	{
-		if (UGameInstance* GI = GetGameInstance())
-		{
-			UIManager = GI->GetSubsystem<UUIManagerSubsystem>();
-		}
-	}
-	// Initialize slider values from pending (so if the user already changed values they are shown)
-    RefreshFromManager();
+    // Bind slider events
+    if (MasterSlider) MasterSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
+    if (MusicSlider)  MusicSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
+    if (SFXSlider)    SFXSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
+
+    RefreshFromParent();
 }
+
 void UAudioOptionsCategoryWidget::NativePreConstruct()
 {
-	Super::NativePreConstruct();
-	
-	MasterSlider->SetLabel(MasterSliderLabel);
-	MusicSlider->SetLabel(MusicSliderLabel);
-	SFXSlider->SetLabel(SFXSliderLabel);
-	// Bind slider events after preconstruct so they are ready when initialized occurs
-	BindSliders();
+    Super::NativePreConstruct();
+    if (MasterSlider) MasterSlider->SetLabel(MasterSliderLabel);
+    if (MusicSlider)  MusicSlider->SetLabel(MusicSliderLabel);
+    if (SFXSlider)    SFXSlider->SetLabel(SFXSliderLabel);
 }
 
-void UAudioOptionsCategoryWidget::NativeDestruct()
+UOptionsBaseWidget* UAudioOptionsCategoryWidget::GetParentOptions() const
 {
-	// Clean up delegates
-	if (MasterSlider)
-	{
-		MasterSlider->OnValueChanged.RemoveDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
-	}
-	if (MusicSlider)
-	{
-		MusicSlider->OnValueChanged.RemoveDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
-	}
-	if (SFXSlider)
-	{
-		SFXSlider->OnValueChanged.RemoveDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
-	}
-
-	if (UIManager)
-	{
-		UIManager->OnSettingsChanged.RemoveDynamic(this, &UAudioOptionsCategoryWidget::HandleManagerSettingsChanged);
-	}
-
-	Super::NativeDestruct();
-}
-
-void UAudioOptionsCategoryWidget::BindSliders()
-{
-	// Bind sliders
-	if (MasterSlider)
-	{
-		MasterSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
-	}
-	if (MusicSlider)
-	{
-		MusicSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
-	}
-	if (SFXSlider)
-	{
-		SFXSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
-	}
-
-	// Listen for manager changes so we refresh when Apply/Cancel occurs
-	if (UIManager)
-	{
-		UIManager->OnSettingsChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleManagerSettingsChanged);
-	}
+    UWidget* Current = GetParent();
+    while (Current)
+    {
+        if (UOptionsBaseWidget* Options = Cast<UOptionsBaseWidget>(Current))
+        {
+            return Options;
+        }
+        Current = Current->GetParent();
+    }
+    return nullptr;
 }
 
 void UAudioOptionsCategoryWidget::HandleMasterChanged(float Value)
 {
-	if (!UIManager) return;
-	UIManager->SetAudioOption(EAudioOption::Master, Value);
+    if (bIsRefreshing) return;
+    if (UOptionsBaseWidget* Parent = GetParentOptions())
+    {
+        Parent->SetAudioOption(EAudioOption::Master, Value);
+    }
 }
 
 void UAudioOptionsCategoryWidget::HandleMusicChanged(float Value)
 {
-	if (!UIManager) return;
-	UIManager->SetAudioOption(EAudioOption::Music, Value);
+    if (bIsRefreshing) return;
+    if (UOptionsBaseWidget* Parent = GetParentOptions())
+    {
+        Parent->SetAudioOption(EAudioOption::Music, Value);
+    }
 }
 
 void UAudioOptionsCategoryWidget::HandleSFXChanged(float Value)
 {
-	if (!UIManager) return;
-	UIManager->SetAudioOption(EAudioOption::SFX, Value);
+    if (bIsRefreshing) return;
+    if (UOptionsBaseWidget* Parent = GetParentOptions())
+    {
+        Parent->SetAudioOption(EAudioOption::SFX, Value);
+    }
 }
 
-void UAudioOptionsCategoryWidget::HandleManagerSettingsChanged(ESettingsCategory ChangedCategory)
+void UAudioOptionsCategoryWidget::HandleSettingsChanged(ESettingsCategory ChangedCategory)
 {
-	// Refresh when audio category or global (None) changes
-	if (ChangedCategory == Category || ChangedCategory == ESettingsCategory::None)
-	{
-		RefreshFromManager();
-	}
+    // Ja mainījās Audio vai tika izsaukts globāls reset (None)
+    if (ChangedCategory == ESettingsCategory::Audio || ChangedCategory == ESettingsCategory::None)
+    {
+        RefreshFromParent();
+    }
 }
 
-void UAudioOptionsCategoryWidget::RefreshFromManager()
+void UAudioOptionsCategoryWidget::RefreshFromParent()
 {
-	if (!UIManager) return;
+    UOptionsBaseWidget* Parent = GetParentOptions();
+    if (!Parent) return;
 
-	// Use pending values so the UI reflects current pending state (or after cancel/apply)
-	if (MasterSlider)
-	{
-		MasterSlider->SetValue(UIManager->GetPendingMasterVolume());
-	}
-	if (MusicSlider)
-	{
-		MusicSlider->SetValue(UIManager->GetPendingMusicVolume());
-	}
-	if (SFXSlider)
-	{
-		SFXSlider->SetValue(UIManager->GetPendingSFXVolume());
-	}
+    bIsRefreshing = true; // Paceļam karogu
+
+    if (MasterSlider) MasterSlider->SetValue(Parent->GetPendingMasterVolume());
+    if (MusicSlider)  MusicSlider->SetValue(Parent->GetPendingMusicVolume());
+    if (SFXSlider)    SFXSlider->SetValue(Parent->GetPendingSFXVolume());
+
+    bIsRefreshing = false; // Nolaižam karogu
 }

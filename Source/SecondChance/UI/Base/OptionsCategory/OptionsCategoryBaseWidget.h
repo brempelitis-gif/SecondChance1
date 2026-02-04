@@ -21,7 +21,7 @@ protected:
 
 	/** Reakcija uz pending izmaiņām */
 	UFUNCTION()
-	void HandleSettingsChanged(ESettingsCategory ChangedCategory);
+	virtual void HandleSettingsChanged(ESettingsCategory ChangedCategory);
 
 	/** Vai šī kategorija šobrīd ir pending */
 	UFUNCTION(BlueprintPure, Category="Options")

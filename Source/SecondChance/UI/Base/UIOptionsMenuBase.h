@@ -3,104 +3,125 @@
 #include "CoreMinimal.h"
 #include "Core/Enums/ESettingsCategory.h"
 #include "UI/Base/UIBaseWidget.h"
-#include "Core/Subsystems/UIManagerSubsystem.h"
+#include "UI/Settings/AudioOptionType.h"
 #include "UIOptionsMenuBase.generated.h"
 
 class UMenuButtonWidget;
 class UWidgetSwitcher;
+class UUIManagerSubsystem;
+class UUIConfirmationPopup;
 
 UCLASS()
 class SECONDCHANCE_API UUIOptionsMenuBase : public UUIBaseWidget
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(BlueprintAssignable, Category = "Settings")
+    FOnSettingsChanged OnSettingsChanged;
 
 protected:
-	virtual void NativeOnInitialized() override;
-	virtual void NativePreConstruct() override;
-	
-	/* =======================
-	 * TOP BUTTONS
-	 * ======================= */
-	UPROPERTY(meta = (BindWidget))
-	UMenuButtonWidget* AudioTab;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
-	FText AudioTabLabel = FText::FromString("Audio");
+    virtual void NativeOnInitialized() override;
+    virtual void NativePreConstruct() override;
+    virtual void NativeConstruct() override;
+    
+    /* =======================
+     * TOP BUTTONS (Tabs)
+     * ======================= */
+    UPROPERTY(meta = (BindWidget))
+    UMenuButtonWidget* AudioTab;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+    FText AudioTabLabel = FText::FromString("Audio");
 
-	UPROPERTY(meta = (BindWidget))
-	UMenuButtonWidget* GraphicsTab;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
-	FText GraphicsTabLabel = FText::FromString("Graphics");
+    UPROPERTY(meta = (BindWidget))
+    UMenuButtonWidget* GraphicsTab;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+    FText GraphicsTabLabel = FText::FromString("Graphics");
 
-	UPROPERTY(meta = (BindWidget))
-	UMenuButtonWidget* ControlsTab;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
-	FText ControlsTabLabel = FText::FromString("Controls");
+    UPROPERTY(meta = (BindWidget))
+    UMenuButtonWidget* ControlsTab;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+    FText ControlsTabLabel = FText::FromString("Controls");
 
-	UPROPERTY(meta = (BindWidget))
-	UMenuButtonWidget* GameplayTab;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
-	FText GameplayTabLabel = FText::FromString("Gameplay");
+    UPROPERTY(meta = (BindWidget))
+    UMenuButtonWidget* GameplayTab;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+    FText GameplayTabLabel = FText::FromString("Gameplay");
 
-	// --- Jauns: Popup loģika ---
-	UPROPERTY(EditAnywhere, Category = "UI|Settings")
-	TSubclassOf<class UUIConfirmationPopup> PopupClass;
+    /* =======================
+     * POPUP & SWITCHER
+     * ======================= */
+    UPROPERTY(EditAnywhere, Category = "UI|Settings")
+    TSubclassOf<UUIConfirmationPopup> PopupClass;
 
-	UPROPERTY()
-	UUIConfirmationPopup* CachedPopup;
+    UPROPERTY()
+    UUIConfirmationPopup* CachedPopup;
 
-	// --- Iekšējais stāvoklis ---
-	ESettingsCategory CurrentCategory = ESettingsCategory::Audio;
+    UPROPERTY(meta = (BindWidget))
+    UWidgetSwitcher* CategorySwitcher;
 
-	/* =======================
-	 * CONTENT SWITCHER
-	 * ======================= */
-	UPROPERTY(meta = (BindWidget))
-	UWidgetSwitcher* CategorySwitcher;
+    /* =======================
+     * BOTTOM ACTIONS
+     * ======================= */
+    UPROPERTY(meta = (BindWidget))
+    UMenuButtonWidget* ApplyButton;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+    FText ApplyButtonLabel = FText::FromString("Apply");
 
-	/* =======================
-	 * BOTTOM ACTIONS
-	 * ======================= */
-	UPROPERTY(meta = (BindWidget))
-	UMenuButtonWidget* ApplyButton;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
-	FText ApplyButtonLabel = FText::FromString("Apply");
+    UPROPERTY(meta = (BindWidget))
+    UMenuButtonWidget* CancelButton;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+    FText CancelButtonLabel = FText::FromString("Cancel");
 
-	UPROPERTY(meta = (BindWidget))
-	UMenuButtonWidget* CancelButton;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
-	FText CancelButtonLabel = FText::FromString("Cancel");
+public:
+    /* === Jaunās core funkcijas (bijušās UIManager funkcijas) === */
+    void SetAudioOption(EAudioOption Option, float Value);
+    bool IsCategoryPending(ESettingsCategory Category) const;
+    void MarkCategoryPending(ESettingsCategory Category);
+    
+    // Getter vērtības kategorijām
+    float GetPendingMasterVolume() const { return PendingMasterVolume; }
+    float GetPendingMusicVolume() const { return PendingMusicVolume; }
+    float GetPendingSFXVolume() const { return PendingSFXVolume; }
 
 private:
-	UPROPERTY()
-	UUIManagerSubsystem* UIManager;
+    /* === Iekšējā loģika === */
+    void BindButtons();
+    void SetActiveCategory(ESettingsCategory Category);
+    
+    UFUNCTION() void HandleAudioTab();
+    UFUNCTION() void HandleGraphicsTab();
+    UFUNCTION() void HandleControlsTab();
+    UFUNCTION() void HandleGameplayTab();
 
-	void BindButtons();
+    UFUNCTION() void HandleApply();
+    UFUNCTION() void HandleCancel();
+    
+    void ApplyAudioSettings();
+    void CancelAudioSettings();
+    void ApplyGraphicsSettings();
+    void CancelGraphicsSettings();
 
-	/* === Handlers === */
-	UFUNCTION(BlueprintCallable)
-	void HandleAudioTab();
-	UFUNCTION(BlueprintCallable)
-	void HandleGraphicsTab();
-	UFUNCTION(BlueprintCallable)
-	void HandleControlsTab();
-	UFUNCTION(BlueprintCallable)
-	void HandleGameplayTab();
+    void LoadAudioSettings();
+    void SaveAudioSettings() const;
+    void SetMasterVolume(float Value) const;
+    void SetMusicVolume(float Value) const;
+    void SetSFXVolume(float Value) const;
 
-	UFUNCTION(BlueprintCallable)
-	void HandleApply();
-	UFUNCTION(BlueprintCallable)
-	void HandleCancel();
-	
-	// Callback for when settings change in the manager
-	UFUNCTION()
-	void HandleSettingsChanged(ESettingsCategory ChangedCategory);
-	
-	// Set active category in the switcher
-	void SetActiveCategory(ESettingsCategory Category);
+    /* === Mainīgie === */
+    ESettingsCategory CurrentCategory = ESettingsCategory::Audio;
+    
+    UPROPERTY()
+    TSet<ESettingsCategory> PendingCategories;
+
+    float CurrentMasterVolume = 1.f;
+    float CurrentMusicVolume = 1.f;
+    float CurrentSFXVolume = 1.f;
+    float PendingMasterVolume = 1.f;
+    float PendingMusicVolume = 1.f;
+    float PendingSFXVolume = 1.f;
 
 protected:
-	// Update visibility of Apply/Cancel buttons based on pending changes
-	UFUNCTION(BlueprintCallable, Category="Options")
-	virtual void UpdateActionButtonsVisibility();
+    UFUNCTION(BlueprintCallable, Category="Options")
+    virtual void UpdateActionButtonsVisibility();
 };
-

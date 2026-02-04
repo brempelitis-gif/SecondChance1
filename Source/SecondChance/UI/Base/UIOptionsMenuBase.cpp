@@ -2,146 +2,207 @@
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "Components/WidgetSwitcher.h"
 #include "Kismet/GameplayStatics.h"
-#include "UI/Base/ConfirmationPopUp/UIConfirmationPopup.h"
+#include "GameFramework/GameUserSettings.h"
+#include "Core/Subsystems/UIManagerSubsystem.h"
+#include "Sound/SoundClass.h"
+#include "Core/Save/AudioSettingsSaveGame.h"
+
+static const FString AudioSettingsSlot = TEXT("AudioSettings");
+static constexpr int32 AudioSettingsUserIndex = 0;
 
 void UUIOptionsMenuBase::NativeOnInitialized()
 {
-	Super::NativeOnInitialized();
-
-	UIManager = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-	
-	// Jauns: Izveidojam Popup vienu reizi un paslēpjam
-	if (PopupClass && !CachedPopup)
-	{
-		CachedPopup = CreateWidget<UUIConfirmationPopup>(this, PopupClass);
-		CachedPopup->AddToViewport(100);
-		CachedPopup->HidePopup();
-	}
-	
-	BindButtons();
-	
-	if (UIManager)
-	{
-		UIManager->OnSettingsChanged.AddDynamic(this, &UUIOptionsMenuBase::HandleSettingsChanged);
-	}
-	UpdateActionButtonsVisibility();
+    Super::NativeOnInitialized();
+    BindButtons();
 }
+
 void UUIOptionsMenuBase::NativePreConstruct()
 {
-	Super::NativePreConstruct();
-	// Uzstādām tekstus Editora priekšskatījumam
-	if (AudioTab) AudioTab->SetLabel(AudioTabLabel);
-	if (GraphicsTab) GraphicsTab->SetLabel(GraphicsTabLabel);
-	if (ControlsTab) ControlsTab->SetLabel(ControlsTabLabel);
-	if (GameplayTab) GameplayTab->SetLabel(GameplayTabLabel);
-	if (ApplyButton) ApplyButton->SetLabel(ApplyButtonLabel);
-	if (CancelButton) CancelButton->SetLabel(CancelButtonLabel);
-	// At this point BindWidget children should be initialized.
-	// Set default category (safe to call now).
-	SetActiveCategory(ESettingsCategory::Audio);
+    Super::NativePreConstruct();
+    if (AudioTab) AudioTab->SetLabel(AudioTabLabel);
+    if (GraphicsTab) GraphicsTab->SetLabel(GraphicsTabLabel);
+    if (ControlsTab) ControlsTab->SetLabel(ControlsTabLabel);
+    if (GameplayTab) GameplayTab->SetLabel(GameplayTabLabel);
+    if (ApplyButton) ApplyButton->SetLabel(ApplyButtonLabel);
+    if (CancelButton) CancelButton->SetLabel(CancelButtonLabel);
 }
+
+void UUIOptionsMenuBase::NativeConstruct()
+{
+    Super::NativeConstruct();
+    LoadAudioSettings();
+    UpdateActionButtonsVisibility();
+}
+
 void UUIOptionsMenuBase::BindButtons()
 {
-	if (AudioTab) AudioTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleAudioTab);
-	if (GraphicsTab) GraphicsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGraphicsTab);
-	if (ControlsTab) ControlsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleControlsTab);
-	if (GameplayTab) GameplayTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGameplayTab);
+    if (AudioTab) AudioTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleAudioTab);
+    if (GraphicsTab) GraphicsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGraphicsTab);
+    if (ControlsTab) ControlsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleControlsTab);
+    if (GameplayTab) GameplayTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGameplayTab);
 
-	if (ApplyButton) ApplyButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleApply);
-	if (CancelButton) CancelButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleCancel);
+    if (ApplyButton) ApplyButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleApply);
+    if (CancelButton) CancelButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleCancel);
 }
 
-void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
+/* === SETTINGS LOGIC === */
+
+void UUIOptionsMenuBase::SetAudioOption(EAudioOption Option, float Value)
 {
-	CurrentCategory = Category;
-	if (!CategorySwitcher)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UUIOptionsMenuBase::SetActiveCategory - CategorySwitcher is null"));
-		return;
-	}
-	int32 Index = 0;
-	switch (Category)
-	{
-	case ESettingsCategory::Audio:     Index = 0; break;
-	case ESettingsCategory::Graphics:  Index = 1; break;
-	case ESettingsCategory::Controls:  Index = 2; break;
-	case ESettingsCategory::Gameplay:  Index = 3; break;
-	default: break;
-	}
-	const int32 Num = CategorySwitcher->GetNumWidgets();
-
-	if (Index < 0 || Index >= Num)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SetActiveCategory - Index %d is out of bounds (NumWidgets = %d)"), Index, Num);
-		return;
-	}
-	CategorySwitcher->SetActiveWidgetIndex(Index);
-	// Jauns noteikums: Pārslēdzot kategoriju, pogas pazūd, ja šajā kategorijā nav izmaiņu
-	UpdateActionButtonsVisibility();
+    switch (Option)
+    {
+        case EAudioOption::Master: PendingMasterVolume = Value; SetMasterVolume(Value); break;
+        case EAudioOption::Music: PendingMusicVolume = Value; SetMusicVolume(Value); break;
+        case EAudioOption::SFX: PendingSFXVolume = Value; SetSFXVolume(Value); break;
+    }
+    MarkCategoryPending(ESettingsCategory::Audio);
 }
 
-void UUIOptionsMenuBase::HandleAudioTab()
+void UUIOptionsMenuBase::MarkCategoryPending(ESettingsCategory Category)
 {
-	SetActiveCategory(ESettingsCategory::Audio);
+    if (Category != ESettingsCategory::None)
+    {
+        PendingCategories.Add(Category);
+        OnSettingsChanged.Broadcast(Category);
+        UpdateActionButtonsVisibility();
+    }
 }
 
-void UUIOptionsMenuBase::HandleGraphicsTab()
+void UUIOptionsMenuBase::ApplyAudioSettings()
 {
-	SetActiveCategory(ESettingsCategory::Graphics);
+    CurrentMasterVolume = PendingMasterVolume;
+    CurrentMusicVolume = PendingMusicVolume;
+    CurrentSFXVolume = PendingSFXVolume;
+    SaveAudioSettings();
 }
 
-void UUIOptionsMenuBase::HandleControlsTab()
+void UUIOptionsMenuBase::CancelAudioSettings()
 {
-	SetActiveCategory(ESettingsCategory::Controls);
+    PendingMasterVolume = CurrentMasterVolume;
+    PendingMusicVolume = CurrentMusicVolume;
+    PendingSFXVolume = CurrentSFXVolume;
+    SetMasterVolume(CurrentMasterVolume);
+    SetMusicVolume(CurrentMusicVolume);
+    SetSFXVolume(CurrentSFXVolume);
 }
 
-void UUIOptionsMenuBase::HandleGameplayTab()
+void UUIOptionsMenuBase::ApplyGraphicsSettings()
 {
-	SetActiveCategory(ESettingsCategory::Gameplay);
+    if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+    {
+        Settings->ApplySettings(true);
+        Settings->ConfirmVideoMode();
+        Settings->SaveSettings();
+    }
 }
+
+void UUIOptionsMenuBase::CancelGraphicsSettings()
+{
+    if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+    {
+        Settings->LoadSettings(true);
+        Settings->ApplySettings(false);
+    }
+}
+
+/* === HANDLERS === */
 
 void UUIOptionsMenuBase::HandleApply()
 {
-	if (!UIManager) return;
-
-	if (CurrentCategory == ESettingsCategory::Graphics && CachedPopup)
-	{
-		// Piesaistām popupa notikumus UIManager sistēmai
-		CachedPopup->OnConfirmed.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::ApplyPendingSettings);
-		CachedPopup->OnTimedOutOrCancelled.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::CancelPendingSettings);
-		
-		// Atjaunojam UI pēc popupa slēgšanas
-		CachedPopup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::UpdateActionButtonsVisibility);
-		CachedPopup->OnTimedOutOrCancelled.AddUniqueDynamic(this, &UUIOptionsMenuBase::UpdateActionButtonsVisibility);
-
-		CachedPopup->ShowPopup(GraphicsTabLabel, 15.0f);
-	}
-	else
-	{
-		// Audio/Gameplay iestatījumus apstiprinām uzreiz
-		UIManager->ApplyPendingSettings();
-		UpdateActionButtonsVisibility();
-	}
+    if (PendingCategories.Contains(ESettingsCategory::Audio)) ApplyAudioSettings();
+    if (PendingCategories.Contains(ESettingsCategory::Graphics)) ApplyGraphicsSettings();
+    
+    PendingCategories.Empty();
+    OnSettingsChanged.Broadcast(ESettingsCategory::None); // Refresh all
+    UpdateActionButtonsVisibility();
 }
 
 void UUIOptionsMenuBase::HandleCancel()
 {
-	if (UIManager) UIManager->CancelPendingSettings();
-	//After cancelling, hide buttons until further changes are made
-	UpdateActionButtonsVisibility();
+    if (PendingCategories.Contains(ESettingsCategory::Audio)) CancelAudioSettings();
+    if (PendingCategories.Contains(ESettingsCategory::Graphics)) CancelGraphicsSettings();
+
+    PendingCategories.Empty();
+    OnSettingsChanged.Broadcast(ESettingsCategory::None);
+    UpdateActionButtonsVisibility();
 }
-void UUIOptionsMenuBase::HandleSettingsChanged(ESettingsCategory Category)
-{
-	UpdateActionButtonsVisibility();
-}
+
 void UUIOptionsMenuBase::UpdateActionButtonsVisibility()
 {
-	if (!ApplyButton || !CancelButton || !UIManager) return;
-
-	// Pārbauda tikai aktuālo sadaļu
-	bool bShow = UIManager->IsCategoryPending(CurrentCategory);
-	
-	ESlateVisibility Vis = bShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
-	ApplyButton->SetVisibility(Vis);
-	CancelButton->SetVisibility(Vis);
+    bool bHasChanges = PendingCategories.Num() > 0;
+    if (ApplyButton) ApplyButton->SetVisibility(bHasChanges ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+    if (CancelButton) CancelButton->SetVisibility(bHasChanges ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
+
+void UUIOptionsMenuBase::SetActiveCategory(ESettingsCategory Category)
+{
+    CurrentCategory = Category;
+    if (CategorySwitcher)
+    {
+        // Piezīme: Indexi switcherī jāsakrīt ar Enuma secību vai jākārto manuāli
+        int32 Index = 0;
+        switch(Category) {
+            case ESettingsCategory::Audio: Index = 0; break;
+            case ESettingsCategory::Graphics: Index = 1; break;
+            case ESettingsCategory::Controls: Index = 2; break;
+            case ESettingsCategory::Gameplay: Index = 3; break;
+            default: Index = 0;
+        }
+        CategorySwitcher->SetActiveWidgetIndex(Index);
+    }
+}
+
+// Tabu pogas
+void UUIOptionsMenuBase::HandleAudioTab() { SetActiveCategory(ESettingsCategory::Audio); }
+void UUIOptionsMenuBase::HandleGraphicsTab() { SetActiveCategory(ESettingsCategory::Graphics); }
+void UUIOptionsMenuBase::HandleControlsTab() { SetActiveCategory(ESettingsCategory::Controls); }
+void UUIOptionsMenuBase::HandleGameplayTab() { SetActiveCategory(ESettingsCategory::Gameplay); }
+
+/* === AUDIO INTERNALS (Tev jau zināmie) === */
+
+void UUIOptionsMenuBase::SetMasterVolume(float Value) const
+{
+    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
+    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->MasterSoundClass)
+        UIMan->UIConfig->MasterSoundClass->Properties.Volume = Value;
+}
+
+void UUIOptionsMenuBase::SetMusicVolume(float Value) const
+{
+    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
+    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->MusicSoundClass)
+        UIMan->UIConfig->MusicSoundClass->Properties.Volume = Value;
+}
+
+void UUIOptionsMenuBase::SetSFXVolume(float Value) const
+{
+    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
+    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SFXSoundClass)
+        UIMan->UIConfig->SFXSoundClass->Properties.Volume = Value;
+}
+
+void UUIOptionsMenuBase::LoadAudioSettings()
+{
+    if (!UGameplayStatics::DoesSaveGameExist(AudioSettingsSlot, AudioSettingsUserIndex)) return;
+    UAudioSettingsSaveGame* Save = Cast<UAudioSettingsSaveGame>(UGameplayStatics::LoadGameFromSlot(AudioSettingsSlot, AudioSettingsUserIndex));
+    if (Save)
+    {
+        CurrentMasterVolume = PendingMasterVolume = Save->MasterVolume;
+        CurrentMusicVolume = PendingMusicVolume = Save->MusicVolume;
+        CurrentSFXVolume = PendingSFXVolume = Save->SFXVolume;
+        SetMasterVolume(CurrentMasterVolume); SetMusicVolume(CurrentMusicVolume); SetSFXVolume(CurrentSFXVolume);
+    }
+}
+
+void UUIOptionsMenuBase::SaveAudioSettings() const
+{
+    UAudioSettingsSaveGame* Save = Cast<UAudioSettingsSaveGame>(UGameplayStatics::CreateSaveGameObject(UAudioSettingsSaveGame::StaticClass()));
+    if (Save)
+    {
+        Save->MasterVolume = CurrentMasterVolume; Save->MusicVolume = CurrentMusicVolume; Save->SFXVolume = CurrentSFXVolume;
+        UGameplayStatics::SaveGameToSlot(Save, AudioSettingsSlot, AudioSettingsUserIndex);
+    }
+}
+
+bool UUIOptionsMenuBase::IsCategoryPending(ESettingsCategory Category) const { return PendingCategories.Contains(Category); }
+

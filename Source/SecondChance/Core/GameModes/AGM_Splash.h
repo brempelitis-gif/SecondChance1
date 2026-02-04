@@ -21,7 +21,7 @@ protected:
 	class USplashScreenWidget* SplashWidget;
 
 	FTimerHandle ProgressTimerHandle;
-	FName NextLevelName = TEXT("L_MainMenu");
+	FName NextLevelName = TEXT("/Game/ManaSpele/Levels/L_MainMenu");
 
 	void StartAsyncLoad();
 	void UpdateLoadingProgress(); // Funkcija, ko izsauks taimeris
