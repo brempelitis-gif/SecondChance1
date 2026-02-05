@@ -13,24 +13,15 @@ void AGM_MainMenu::BeginPlay()
 {
 	Super::BeginPlay();
 
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (!PC) return;
-
-	// 1. Izveidojam un parādām logrīku
-	if (MainMenuWidgetClass)
+	UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
+	if (UIMan && UIMan->UIConfig && UIMan->UIConfig->MainMenuClass)
 	{
-		UUserWidget* Menu = CreateWidget<UUserWidget>(GetWorld(), MainMenuWidgetClass);
-		GetGameInstance()->GetSubsystem<UUIManagerSubsystem>()->PushWidget(Menu);
+		// Izveidojam Main Menu caur mūsu jauno sistēmu
+		UUserWidget* MainMenu = CreateWidget<UUserWidget>(GetWorld(), UIMan->UIConfig->MainMenuClass);
+		if (MainMenu)
+		{
+			UIMan->PushWidget(MainMenu);
+			UE_LOG(LogTemp, Log, TEXT("AGM_Menu: Main Menu uzstumts uz ekrāna."));
+		}
 	}
-/*
-	// 2. Iestatām ievades režīmu tikai uz UI
-	FInputModeUIOnly InputMode;
-	if (CurrentMainMenuWidget)
-	{
-		InputMode.SetWidgetToFocus(CurrentMainMenuWidget->TakeWidget());
-		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	}
-
-	PC->SetInputMode(InputMode);
-	PC->bShowMouseCursor = true; // Obligāti parādām peli  */
 }

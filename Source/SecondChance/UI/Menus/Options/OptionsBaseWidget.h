@@ -58,6 +58,9 @@ public:
 protected:
     virtual void NativeConstruct() override;
 
+	static inline const FString AudioSettingsSlot = TEXT("AudioSettings");
+	static constexpr int32 AudioSettingsUserIndex = 0;
+	
     void LoadAudioSettings();
     void SaveAudioSettings() const;
     void SetMasterVolume(float Value) const;

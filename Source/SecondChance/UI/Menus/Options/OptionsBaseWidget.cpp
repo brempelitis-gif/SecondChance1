@@ -5,8 +5,8 @@
 #include "Core/Save/AudioSettingsSaveGame.h"
 #include "Sound/SoundClass.h"
 
-static const FString AudioSettingsSlot = TEXT("AudioSettings");
-static constexpr int32 AudioSettingsUserIndex = 0;
+//static const FString AudioSettingsSlot = TEXT("AudioSettings");
+//static constexpr int32 AudioSettingsUserIndex = 0;
 
 void UOptionsBaseWidget::NativeConstruct()
 {

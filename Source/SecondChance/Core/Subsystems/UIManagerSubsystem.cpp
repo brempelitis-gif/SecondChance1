@@ -13,6 +13,14 @@ void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			UIConfig = GI->UIConfig;
 		}
 	}
+	if (UIConfig)
+	{
+		UE_LOG(LogTemp, Log, TEXT("UIManager: UIConfig ielādēts veiksmīgi!"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("UIManager: UIConfig NAV ATRASTS! UI nevarēs darboties."));
+	}
 }
 
 void UUIManagerSubsystem::PushWidget(UUserWidget* NewWidget, bool bShowCursor, bool bPauseGame)
