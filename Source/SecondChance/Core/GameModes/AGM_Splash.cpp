@@ -7,20 +7,27 @@
 AGM_Splash::AGM_Splash()
 {
 }
-
 void AGM_Splash::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	if (SplashWidgetClass)
-	{
-		SplashWidget = CreateWidget<USplashScreenWidget>(GetWorld(), SplashWidgetClass);
-		if (SplashWidget) SplashWidget->AddToViewport();
-	}
+    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
+    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SplashWidgetClass)
+    {
+        // Izveidojam logrīku
+        SplashWidget = CreateWidget<USplashScreenWidget>(GetWorld(), UIMan->UIConfig->SplashWidgetClass);
+        
+        if (SplashWidget)
+        {
+            // Reģistrējam caur sistēmu
+            UIMan->PushWidget(SplashWidget);
+        }
+    }
 
-	// Pēc 1 sekundes sāk ielādi
-	GetWorldTimerManager().SetTimerForNextTick(this, &AGM_Splash::StartAsyncLoad);
+    GetWorldTimerManager().SetTimerForNextTick(this, &AGM_Splash::StartAsyncLoad);
 }
+
+
 
 void AGM_Splash::StartAsyncLoad()
 {
@@ -43,11 +50,10 @@ void AGM_Splash::StartAsyncLoad()
 
 void AGM_Splash::UpdateLoadingProgress()
 {
-	if (SplashWidget)
-	{
-		float Progress = GetAsyncLoadPercentage(NextLevelName);
-        
-		// Nododam datus Widgetam (Progress ir 0-100 robežās)
-		SplashWidget->UpdateProgress(Progress / 100.0f);
-	}
+    // Pārliecināmies, ka logrīks vēl eksistē un ir redzams
+    if (IsValid(SplashWidget) && SplashWidget->IsInViewport())
+    {
+       float Progress = GetAsyncLoadPercentage(NextLevelName);
+       SplashWidget->UpdateProgress(Progress / 100.0f);
+    }
 }
