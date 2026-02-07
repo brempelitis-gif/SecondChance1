@@ -24,7 +24,13 @@ protected:
     virtual void NativeOnInitialized() override;
     virtual void NativePreConstruct() override;
     virtual void NativeConstruct() override;
-    
+
+    /* =======================
+     * IEKŠĒJĀS KONSTANTES (Izlabo C2374)
+     * ======================= */
+    static inline const FString AudioSettingsSlot = TEXT("AudioSettings");
+    static constexpr int32 AudioSettingsUserIndex = 0;
+
     /* =======================
      * TOP BUTTONS (Tabs)
      * ======================= */
@@ -48,6 +54,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
     FText GameplayTabLabel = FText::FromString("Gameplay");
 
+    
     /* =======================
      * POPUP & SWITCHER
      * ======================= */
@@ -64,6 +71,11 @@ protected:
      * BOTTOM ACTIONS
      * ======================= */
     UPROPERTY(meta = (BindWidget))
+    UMenuButtonWidget* BackButton;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
+    FText BackButtonLabel = FText::FromString("Back");
+    
+    UPROPERTY(meta = (BindWidget))
     UMenuButtonWidget* ApplyButton;
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
     FText ApplyButtonLabel = FText::FromString("Apply");
@@ -74,18 +86,15 @@ protected:
     FText CancelButtonLabel = FText::FromString("Cancel");
 
 public:
-    /* === Jaunās core funkcijas (bijušās UIManager funkcijas) === */
     void SetAudioOption(EAudioOption Option, float Value);
     bool IsCategoryPending(ESettingsCategory Category) const;
     void MarkCategoryPending(ESettingsCategory Category);
     
-    // Getter vērtības kategorijām
     float GetPendingMasterVolume() const { return PendingMasterVolume; }
     float GetPendingMusicVolume() const { return PendingMusicVolume; }
     float GetPendingSFXVolume() const { return PendingSFXVolume; }
 
 private:
-    /* === Iekšējā loģika === */
     void BindButtons();
     void SetActiveCategory(ESettingsCategory Category);
     
@@ -94,6 +103,7 @@ private:
     UFUNCTION() void HandleControlsTab();
     UFUNCTION() void HandleGameplayTab();
 
+    UFUNCTION() void HandleBack();
     UFUNCTION() void HandleApply();
     UFUNCTION() void HandleCancel();
     
@@ -108,7 +118,6 @@ private:
     void SetMusicVolume(float Value) const;
     void SetSFXVolume(float Value) const;
 
-    /* === Mainīgie === */
     ESettingsCategory CurrentCategory = ESettingsCategory::Audio;
     
     UPROPERTY()

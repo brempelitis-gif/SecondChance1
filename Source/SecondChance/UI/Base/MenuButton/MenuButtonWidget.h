@@ -35,10 +35,16 @@ public:
 	void SetLabel(const FText& InText);
 
 protected:
-	/* ================================
-	 * INTERNAL
-	 * ================================ */
+	// Skaņas, ko varēsi iestatīt Blueprintā
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	USoundBase* HoverSound;
 
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	USoundBase* ClickSound;
+
+	// Pārrakstām Native peles notikumus
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnInitialized() override;
 
 	/* ================================

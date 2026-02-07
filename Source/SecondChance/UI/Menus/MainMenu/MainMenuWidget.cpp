@@ -3,6 +3,7 @@
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "UI/Base/UIOptionsMenuBase.h"
 
 void UMainMenuWidget::NativeOnInitialized()
 {
@@ -45,13 +46,13 @@ void UMainMenuWidget::HandleNewGameClicked()
 void UMainMenuWidget::HandleOptionsClicked()
 {
     UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    
-    // Ja klase ir iestatīta, izveidojam logrīku un "uzstumjam" to uz steka
-    if (UIMan && OptionsMenuClass)
+    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->OptionsMenuClass)
     {
-        UUserWidget* OptionsWidget = CreateWidget<UUserWidget>(this, OptionsMenuClass);
+        // Izveidojam logrīku
+        UUIOptionsMenuBase* OptionsWidget = CreateWidget<UUIOptionsMenuBase>(GetWorld(), UIMan->UIConfig->OptionsMenuClass);
         if (OptionsWidget)
         {
+            // Uzstumjam to uz ekrāna virs Main Menu
             UIMan->PushWidget(OptionsWidget);
         }
     }
