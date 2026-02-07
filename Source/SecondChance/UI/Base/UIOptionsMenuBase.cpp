@@ -21,32 +21,29 @@ void UUIOptionsMenuBase::NativePreConstruct()
     if (GraphicsTab) GraphicsTab->SetLabel(GraphicsTabLabel);
     if (ControlsTab) ControlsTab->SetLabel(ControlsTabLabel);
     if (GameplayTab) GameplayTab->SetLabel(GameplayTabLabel);
+    if (BackButton) BackButton->SetLabel(BackButtonLabel);
     if (ApplyButton) ApplyButton->SetLabel(ApplyButtonLabel);
     if (CancelButton) CancelButton->SetLabel(CancelButtonLabel);
 }
 
 void UUIOptionsMenuBase::NativeConstruct()
 {
-    Super::NativeConstruct();
+    LoadAudioSettings(); // 1. Ielādējam iestatījumus no faila
+    Super::NativeConstruct(); // 2. Inicializējam bērnus
     
-    // 1. Ielādējam iestatījumus no faila
-    LoadAudioSettings();
-    
-    // 2. UZREIZ IESTATĀM AUDIO KATEGORIJU KĀ AKTĪVO
-    SetActiveCategory(ESettingsCategory::Audio);
-    
-    // 3. Paslēpjam Apply/Cancel, jo sākumā izmaiņu nav
-    UpdateActionButtonsVisibility();
+    SetActiveCategory(ESettingsCategory::Audio); // 3. UZREIZ IESTATĀM AUDIO KATEGORIJU KĀ AKTĪVO
+    OnSettingsChanged.Broadcast(ESettingsCategory::Audio);
+    UpdateActionButtonsVisibility();  // 4. Paslēpjam Apply/Cancel, jo sākumā izmaiņu nav
 }
 
 void UUIOptionsMenuBase::BindButtons()
 {
-    // Svarīgi: Pārliecinies, ka tavā MenuButtonWidget ir OnButtonClicked delegāts (Dynamic)
+    // Svarīgi: Pārliecinies, ka tavā MenuButtonWidget ir OnClicked delegāts (Dynamic)
     if (AudioTab) AudioTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleAudioTab);
     if (GraphicsTab) GraphicsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGraphicsTab);
     if (ControlsTab) ControlsTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleControlsTab);
     if (GameplayTab) GameplayTab->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleGameplayTab);
-
+    if (BackButton) BackButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleBack);
     if (ApplyButton) ApplyButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleApply);
     if (CancelButton) CancelButton->OnClicked.AddDynamic(this, &UUIOptionsMenuBase::HandleCancel);
 }
@@ -131,8 +128,6 @@ void UUIOptionsMenuBase::HandleCancel()
     PendingCategories.Empty();
     OnSettingsChanged.Broadcast(ESettingsCategory::None);
     UpdateActionButtonsVisibility();
-
-
 }
 
 void UUIOptionsMenuBase::UpdateActionButtonsVisibility()
@@ -219,6 +214,7 @@ void UUIOptionsMenuBase::LoadAudioSettings()
         SetMasterVolume(CurrentMasterVolume); 
         SetMusicVolume(CurrentMusicVolume); 
         SetSFXVolume(CurrentSFXVolume);
+        UE_LOG(LogTemp, Warning, TEXT("Ielādēts Master no Save: %f"), CurrentMasterVolume);
     }
 }
 

@@ -34,6 +34,7 @@ protected:
 
 	virtual void NativeOnInitialized() override;
 	virtual void NativePreConstruct() override;
+	virtual  void NativeConstruct() override;
     
 	/** No OptionsCategoryBaseWidget */
 	virtual void HandleSettingsChanged(ESettingsCategory ChangedCategory) override;

@@ -10,6 +10,11 @@ void UAudioOptionsCategoryWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
+    // Pierakstāmies uz Parent notikumiem
+    if (UUIOptionsMenuBase* Parent = GetParentOptions())
+    {
+        Parent->OnSettingsChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSettingsChanged);
+    }
     if (MasterSlider) MasterSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
     if (MusicSlider)  MusicSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
     if (SFXSlider)    SFXSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
@@ -22,14 +27,18 @@ void UAudioOptionsCategoryWidget::NativePreConstruct()
 {
     Super::NativePreConstruct();
     // Label iestatīšana paliek kā tev bija
+    MasterSlider->SetLabel(MasterSliderLabel);
+    MusicSlider->SetLabel(MusicSliderLabel);
+    SFXSlider->SetLabel(SFXSliderLabel);
 }
 
-UUIOptionsMenuBase* UAudioOptionsCategoryWidget::GetParentOptions() const
+void UAudioOptionsCategoryWidget::NativeConstruct()
 {
-    // Izmantojam efektīvāku metodi, lai atrastu "tēva" logrīku hierarhijā
-    return Cast<UUIOptionsMenuBase>(GetTypedOuter<UUIOptionsMenuBase>());
+    Super::NativeConstruct();
+    // Pagaidām 0.2 sekundes, lai Parent pabeidz ielādi, un tad atsvaidzinām
+    FTimerHandle TempHandle;
+    GetWorld()->GetTimerManager().SetTimer(TempHandle, this, &UAudioOptionsCategoryWidget::RefreshFromParent, 0.2f, false);
 }
-
 void UAudioOptionsCategoryWidget::HandleMasterChanged(float Value)
 {
     if (bIsRefreshing) return;
@@ -68,14 +77,38 @@ void UAudioOptionsCategoryWidget::HandleSettingsChanged(ESettingsCategory Change
 
 void UAudioOptionsCategoryWidget::RefreshFromParent()
 {
+
+    
+
+
+    
     UUIOptionsMenuBase* Parent = GetParentOptions();
-    if (!Parent) return;
+    
+    if (!Parent) 
+    {
+        // Ja Parent vēl nav gatavs, mēģinām vēlreiz pēc 0.1 sekundes
+        FTimerHandle RetryHandle;
+        GetWorld()->GetTimerManager().SetTimer(RetryHandle, this, &UAudioOptionsCategoryWidget::RefreshFromParent, 0.1f, false);
+        return;
+    }
 
     bIsRefreshing = true;
+    // Izmantojam lokālos mainīgos, lai debugotu
+        float M = Parent->GetPendingMasterVolume();
+        float Mus = Parent->GetPendingMusicVolume();
+        float S = Parent->GetPendingSFXVolume();
+    
+        UE_LOG(LogTemp, Warning, TEXT("Kategorija atsvaidzina slaiderus: M:%f, Mus:%f, S:%f"), M, Mus, S);
 
     if (MasterSlider) MasterSlider->SetValue(Parent->GetPendingMasterVolume());
     if (MusicSlider)  MusicSlider->SetValue(Parent->GetPendingMusicVolume());
     if (SFXSlider)    SFXSlider->SetValue(Parent->GetPendingSFXVolume());
 
     bIsRefreshing = false;
+    UE_LOG(LogTemp, Log, TEXT("AudioCategory: Dati atsvaidzināti no Parent!"));
+}
+UUIOptionsMenuBase* UAudioOptionsCategoryWidget::GetParentOptions() const
+{
+    // Drošākais veids, kā atrast Options logu no bērna logrīka
+    return Cast<UUIOptionsMenuBase>(GetTypedOuter<UUIOptionsMenuBase>());
 }

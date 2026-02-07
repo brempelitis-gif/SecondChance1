@@ -17,10 +17,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
 	TSubclassOf<UUIBaseWidget> MainMenuClass;
 
-	// Options Menu Widget
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
-	//TSubclassOf<UUIBaseWidget> OptionsMenuClass;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Classes")
 	TSubclassOf<class UUIOptionsMenuBase> OptionsMenuClass;
 	

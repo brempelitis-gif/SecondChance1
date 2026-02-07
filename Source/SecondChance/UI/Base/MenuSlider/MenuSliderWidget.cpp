@@ -31,14 +31,18 @@ void UMenuSliderWidget::HandleSliderChanged(float InValue)
 	OnValueChanged.Broadcast(InValue);
 	SetValueUI(InValue);
 }
-
 void UMenuSliderWidget::SetValue(float InValue)
 {
+	// Nodrošinām, ka vērtība ir diapazonā 0-1
+	float ClampedValue = FMath::Clamp(InValue, 0.f, 1.f);
+
 	if (Slider)
 	{
-		Slider->SetValue(InValue);
+		Slider->SetValue(ClampedValue);
 	}
-	SetValueUI(InValue);
+    
+	// Obligāti atjaunojam teksta procentu (piem. 50%)
+	SetValueUI(ClampedValue);
 }
 void UMenuSliderWidget::SetValueUI(float InValue)
 {
