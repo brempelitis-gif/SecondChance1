@@ -24,9 +24,13 @@ void AGM_Splash::BeginPlay()
             UIMan->PushWidget(SplashWidget);
         }
     }
+
 	// Dosim Splash ekrānam vismaz 2 sekundes goda laika pirms sākam ielādi
 	FTimerHandle SplashDelayHandle;
 	GetWorldTimerManager().SetTimer(SplashDelayHandle, this, &AGM_Splash::StartAsyncLoad, 2.0f, false);
+
+
+  //  GetWorldTimerManager().SetTimerForNextTick(this, &AGM_Splash::StartAsyncLoad);
 }
 
 

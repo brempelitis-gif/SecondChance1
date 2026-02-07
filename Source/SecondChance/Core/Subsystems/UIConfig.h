@@ -10,8 +10,8 @@ class SECONDCHANCE_API UUIConfig : public UDataAsset
 
 public:
 	// Splash Screen Widget
-    UPROPERTY(EditDefaultsOnly, Category = "UI|Classes")
-    TSubclassOf<class USplashScreenWidget> SplashWidgetClass;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Classes")
+	TSubclassOf<class USplashScreenWidget> SplashWidgetClass;
 
 	// Main Menu Widget
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
