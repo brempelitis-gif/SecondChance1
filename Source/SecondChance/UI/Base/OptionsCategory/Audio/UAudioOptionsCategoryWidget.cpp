@@ -9,12 +9,7 @@
 void UAudioOptionsCategoryWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
-
-    // Pierakstāmies uz Parent notikumiem
-    if (UUIOptionsMenuBase* Parent = GetParentOptions())
-    {
-        Parent->OnSettingsChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSettingsChanged);
-    }
+    
     if (MasterSlider) MasterSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMasterChanged);
     if (MusicSlider)  MusicSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleMusicChanged);
     if (SFXSlider)    SFXSlider->OnValueChanged.AddDynamic(this, &UAudioOptionsCategoryWidget::HandleSFXChanged);
@@ -77,11 +72,6 @@ void UAudioOptionsCategoryWidget::HandleSettingsChanged(ESettingsCategory Change
 
 void UAudioOptionsCategoryWidget::RefreshFromParent()
 {
-
-    
-
-
-    
     UUIOptionsMenuBase* Parent = GetParentOptions();
     
     if (!Parent) 
@@ -100,12 +90,12 @@ void UAudioOptionsCategoryWidget::RefreshFromParent()
     
         UE_LOG(LogTemp, Warning, TEXT("Kategorija atsvaidzina slaiderus: M:%f, Mus:%f, S:%f"), M, Mus, S);
 
-    if (MasterSlider) MasterSlider->SetValue(Parent->GetPendingMasterVolume());
-    if (MusicSlider)  MusicSlider->SetValue(Parent->GetPendingMusicVolume());
-    if (SFXSlider)    SFXSlider->SetValue(Parent->GetPendingSFXVolume());
+    if (MasterSlider) MasterSlider->SetValue(M);
+    if (MusicSlider)  MusicSlider->SetValue(Mus);
+    if (SFXSlider)    SFXSlider->SetValue(S);
 
     bIsRefreshing = false;
-    UE_LOG(LogTemp, Log, TEXT("AudioCategory: Dati atsvaidzināti no Parent!"));
+    UE_LOG(LogTemp, Log, TEXT("AudioCategory: Dati atsvaidzināti (M:%f)"), M);
 }
 UUIOptionsMenuBase* UAudioOptionsCategoryWidget::GetParentOptions() const
 {

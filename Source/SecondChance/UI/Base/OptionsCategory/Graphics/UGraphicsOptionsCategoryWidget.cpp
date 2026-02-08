@@ -4,6 +4,7 @@
 #include "UI/Base/MenuDropdown/MenuDropdownWidget.h"
 #include "UI/Base/MenuSlider/MenuSliderWidget.h"
 #include "UI/Menus/Options/OptionsBaseWidget.h"
+#include "UI/Base/UIOptionsMenuBase.h" // Svarīgi: Īstais headeris
 
 void UGraphicsOptionsCategoryWidget::NativePreConstruct()
 {
@@ -30,39 +31,38 @@ void UGraphicsOptionsCategoryWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     PopulateComboBoxes();
-    RefreshUIFromCurrentSettings();
+	// Tāpat kā Audio, dodam mazu brīdi ielādei
+	FTimerHandle RefreshHandle;
+	GetWorld()->GetTimerManager().SetTimer(RefreshHandle, this, &UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings, 0.1f, false);
 }
 
-UOptionsBaseWidget* UGraphicsOptionsCategoryWidget::GetParentOptions() const
+UUIOptionsMenuBase* UGraphicsOptionsCategoryWidget::GetParentOptions() const
 {
-    UWidget* Current = GetParent();
-    while (Current)
-    {
-        if (UOptionsBaseWidget* Options = Cast<UOptionsBaseWidget>(Current)) return Options;
-        Current = Current->GetParent();
-    }
-    return nullptr;
+	return Cast<UUIOptionsMenuBase>(GetTypedOuter<UUIOptionsMenuBase>());
 }
 
 void UGraphicsOptionsCategoryWidget::PopulateComboBoxes()
 {
-    if (!ResolutionCombo) return;
-
-    ResolutionCombo->ClearOptions();
-    ResolutionsArray.Empty();
-    FScreenResolutionArray ScreenResolutions;
-    if (RHIGetAvailableResolutions(ScreenResolutions, true))
-    {
-       for (const FScreenResolutionRHI& Res : ScreenResolutions)
-       {
-          FIntPoint ResPoint(Res.Width, Res.Height);
-          if (!ResolutionsArray.Contains(ResPoint))
-          {
-             ResolutionsArray.Add(ResPoint);
-             ResolutionCombo->AddOption(FString::Printf(TEXT("%d x %d"), Res.Width, Res.Height));
-          }
-       }
-    }
+	if (ResolutionCombo)
+	{
+		ResolutionCombo->ClearOptions();
+		ResolutionsArray.Empty();
+        
+		FScreenResolutionArray ScreenResolutions;
+		if (RHIGetAvailableResolutions(ScreenResolutions, true))
+		{
+			// Sakārtojam rezolūcijas no lielākās uz mazāko (ērtāk lietotājam)
+			for (int32 i = ScreenResolutions.Num() - 1; i >= 0; --i)
+			{
+				FIntPoint ResPoint(ScreenResolutions[i].Width, ScreenResolutions[i].Height);
+				if (!ResolutionsArray.Contains(ResPoint))
+				{
+					ResolutionsArray.Add(ResPoint);
+					ResolutionCombo->AddOption(FString::Printf(TEXT("%d x %d"), ResPoint.X, ResPoint.Y));
+				}
+			}
+		}
+	}
 
     if (QualityCombo)
     {
@@ -87,38 +87,64 @@ void UGraphicsOptionsCategoryWidget::HandleSettingsChanged(ESettingsCategory Cha
 
 void UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings()
 {
-    UGameUserSettings* Settings = GEngine->GetGameUserSettings();
-    if (!Settings) return;
+	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+	if (!Settings) return;
 
-    bIsRefreshing = true;
+	bIsRefreshing = true; // Nobloķējam, lai dropdownu maiņa neizsauktu Apply atkal
 
-    if (ResolutionCombo)
-    {
-       int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
-       if (ResIndex != INDEX_NONE) ResolutionCombo->SetSelectedIndex(ResIndex);
-    }
+	// 1. Rezolūcija
+	if (ResolutionCombo)
+	{
+		int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
+		if (ResIndex != INDEX_NONE) 
+		{
+			ResolutionCombo->SetSelectedIndex(ResIndex);
+		}
+	}
 
-    if (QualityCombo) QualityCombo->SetSelectedIndex(Settings->GetOverallScalabilityLevel());
-    if (WindowModeCombo) WindowModeCombo->SetSelectedIndex((int32)Settings->GetFullscreenMode());
-    if (VSyncCheckBox) VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
-    if (ResolutionScaleSlider) ResolutionScaleSlider->SetValue(Settings->GetResolutionScaleNormalized());
+	// 2. Kvalitāte (Overall Scalability)
+	if (QualityCombo) 
+	{
+		int32 Quality = Settings->GetOverallScalabilityLevel();
+		QualityCombo->SetSelectedIndex(Quality);
+	}
 
-    bIsRefreshing = false;
+	// 3. Loga režīms
+	if (WindowModeCombo) 
+	{
+		WindowModeCombo->SetSelectedIndex((int32)Settings->GetFullscreenMode());
+	}
+
+	// 4. VSync
+	if (VSyncCheckBox) 
+	{
+		VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
+	}
+
+	// 5. Resolution Scale
+	if (ResolutionScaleSlider) 
+	{
+		// Normalized vērtība ir 0.0 - 1.0 (vai 10-100 atkarībā no versijas)
+		ResolutionScaleSlider->SetValue(Settings->GetResolutionScaleNormalized());
+	}
+
+	bIsRefreshing = false;
+	UE_LOG(LogTemp, Log, TEXT("Graphics UI atsvaidzināts no GameUserSettings."));
 }
 
 void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-    if (SelectionType == ESelectInfo::Direct || bIsRefreshing) return;
+	if (bIsRefreshing || SelectionType == ESelectInfo::Direct) return;
     
-    int32 Index = ResolutionCombo->GetSelectedIndex();
-    if (ResolutionsArray.IsValidIndex(Index))
-    {
-       if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
-       {
-          Settings->SetScreenResolution(ResolutionsArray[Index]);
-          if (UOptionsBaseWidget* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
-       }
-    }
+	int32 Index = ResolutionCombo->GetSelectedIndex();
+	if (ResolutionsArray.IsValidIndex(Index))
+	{
+		if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+		{
+			Settings->SetScreenResolution(ResolutionsArray[Index]);
+			if (UUIOptionsMenuBase* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
+		}
+	}
 }
 
 void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
@@ -131,7 +157,7 @@ void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, 
        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
        {
           Settings->SetOverallScalabilityLevel(SelectedIndex);
-          if (UOptionsBaseWidget* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
+          if (UUIOptionsMenuBase* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
        }
     }
 }
@@ -143,7 +169,7 @@ void UGraphicsOptionsCategoryWidget::HandleWindowModeChanged(FString SelectedIte
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
     {
        Settings->SetFullscreenMode((EWindowMode::Type)WindowModeCombo->GetSelectedIndex());
-       if (UOptionsBaseWidget* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
+       if (UUIOptionsMenuBase* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
     }
 }
 
@@ -154,7 +180,7 @@ void UGraphicsOptionsCategoryWidget::HandleVSyncChanged(bool bIsChecked)
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
     {
        Settings->SetVSyncEnabled(bIsChecked);
-       if (UOptionsBaseWidget* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
+       if (UUIOptionsMenuBase* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
     }
 }
 
@@ -165,6 +191,6 @@ void UGraphicsOptionsCategoryWidget::HandleResolutionScaleChanged(float Value)
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
     {
        Settings->SetResolutionScaleNormalized(Value);
-       if (UOptionsBaseWidget* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
+       if (UUIOptionsMenuBase* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
     }
 }

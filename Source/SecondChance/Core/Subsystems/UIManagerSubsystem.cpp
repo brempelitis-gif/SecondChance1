@@ -22,6 +22,29 @@ void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		UE_LOG(LogTemp, Error, TEXT("UIManager: UIConfig NAV ATRASTS! UI nevarēs darboties."));
 	}
 }
+UUIConfirmationPopup* UUIManagerSubsystem::PushConfirmationPopup(FText CategoryName, float Timeout)
+{
+	if (!UIConfig || !UIConfig->ConfirmationPopupClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UIManager: ConfirmationPopupClass nav iestatīta UIConfigā!"));
+		return nullptr;
+	}
+
+	// 1. Izveidojam logrīku
+	UUIConfirmationPopup* Popup = CreateWidget<UUIConfirmationPopup>(GetWorld(), UIConfig->ConfirmationPopupClass);
+    
+	if (Popup)
+	{
+		// 2. Izmantojam tavu esošo Push loģiku!
+		// bShowCursor = true, bPauseGame = false (jo opciju menu jau parasti ir nopauzēts)
+		PushWidget(Popup, true, false);
+        
+		// 3. Inicializējam Pop-up datus
+		Popup->ShowPopup(CategoryName, Timeout);
+	}
+
+	return Popup;
+}
 
 void UUIManagerSubsystem::PushWidget(UUserWidget* NewWidget, bool bShowCursor, bool bPauseGame)
 {

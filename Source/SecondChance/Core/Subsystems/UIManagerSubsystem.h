@@ -13,7 +13,9 @@ class SECONDCHANCE_API UUIManagerSubsystem : public UGameInstanceSubsystem
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI", meta=(AllowPrivateAccess="true"))
 	UUIConfig* UIConfig;
-    
+
+	// Atgriež izveidoto logrīku, lai calleris (Options menu) varētu piesaistīt delegātus
+	UUIConfirmationPopup* PushConfirmationPopup(FText CategoryName, float Timeout);
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	UFUNCTION(BlueprintCallable, Category = "UI Management")

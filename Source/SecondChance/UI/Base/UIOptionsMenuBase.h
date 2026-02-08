@@ -110,6 +110,8 @@ private:
     void ApplyAudioSettings();
     void CancelAudioSettings();
     void ApplyGraphicsSettings();
+    UFUNCTION() void ConfirmGraphicsChanges();
+    UFUNCTION() void RevertGraphicsChanges();
     void CancelGraphicsSettings();
 
     void LoadAudioSettings();

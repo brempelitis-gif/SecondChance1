@@ -88,14 +88,68 @@ void UUIOptionsMenuBase::CancelAudioSettings()
     SetMusicVolume(CurrentMusicVolume);
     SetSFXVolume(CurrentSFXVolume);
 }
-
 void UUIOptionsMenuBase::ApplyGraphicsSettings()
+{
+    UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
+    if (!UIMan) return;
+
+    // 1. Provizoriski piemērojam iestatījumus
+    if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+    {
+        Settings->ApplySettings(false);
+    }
+
+    // 2. Caur subsystemu uzstumjam Pop-up
+    UUIConfirmationPopup* Popup = UIMan->PushConfirmationPopup(
+        FText::FromString("Graphics"), 
+        15.0f
+    );
+
+    if (Popup)
+    {
+        // 3. Piesaistāmies rezultātam
+        Popup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::ConfirmGraphicsChanges);
+        Popup->OnTimedOutOrCancelled.AddUniqueDynamic(this, &UUIOptionsMenuBase::RevertGraphicsChanges);
+        
+        // Papildus: Ja gribam, lai Pop-up aizveroties "izlec" no stacka:
+        Popup->OnConfirmed.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);
+        Popup->OnTimedOutOrCancelled.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);
+    }
+}
+void UUIOptionsMenuBase::ConfirmGraphicsChanges()
 {
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
     {
-        Settings->ApplySettings(true);
         Settings->ConfirmVideoMode();
         Settings->SaveSettings();
+        
+        PendingCategories.Remove(ESettingsCategory::Graphics); // Tagad viss kārtībā var nonemt
+        UpdateActionButtonsVisibility();
+        UE_LOG(LogTemp, Log, TEXT("Grafika apstiprināta un saglabāta."));
+    }
+}
+void UUIOptionsMenuBase::RevertGraphicsChanges()
+{
+    if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+    {
+        // 1. Atgriežam video režīmu (rezolūcija, fullscreen)
+        Settings->RevertVideoMode();
+        
+        // 2. Piespiežam pārlādēt pārējos iestatījumus no diska (kvalitāte, vsync)
+        Settings->LoadSettings(true);
+        
+        // 3. Piemērojam atpakaļ (lai vizuāli viss mainās uzreiz)
+        Settings->ApplySettings(false);
+
+        // 4. Svarīgi: Paziņojam visiem bērniem, ka dati ir mainīti
+        // Maza pauze, lai Unreal paspēj sagremot izmaiņas
+        FTimerHandle RefreshTimer;
+        GetWorld()->GetTimerManager().SetTimer(RefreshTimer, [this]()
+        {
+            OnSettingsChanged.Broadcast(ESettingsCategory::Graphics);
+        }, 0.1f, false);
+        
+        UE_LOG(LogTemp, Warning, TEXT("Grafika revertēta. UI tiek atsvaidzināts."));
     }
 }
 
@@ -112,10 +166,18 @@ void UUIOptionsMenuBase::CancelGraphicsSettings()
 
 void UUIOptionsMenuBase::HandleApply()
 {
-    if (PendingCategories.Contains(ESettingsCategory::Audio)) ApplyAudioSettings();
-    if (PendingCategories.Contains(ESettingsCategory::Graphics)) ApplyGraphicsSettings();
+    if (PendingCategories.Contains(ESettingsCategory::Audio))
+    {
+        ApplyAudioSettings();
+        PendingCategories.Remove(ESettingsCategory::Audio); // Noņemam tikai audio
+    }
+
+    if (PendingCategories.Contains(ESettingsCategory::Graphics))
+    {
+        ApplyGraphicsSettings();
+        // Graphics mēs NEIZŅEMAM no Pending šeit, to izdarīs ConfirmGraphicsChanges
+    }
     
-    PendingCategories.Empty();
     OnSettingsChanged.Broadcast(ESettingsCategory::None); 
     UpdateActionButtonsVisibility();
 }
@@ -163,11 +225,30 @@ void UUIOptionsMenuBase::HandleGameplayTab() { SetActiveCategory(ESettingsCatego
 
 void UUIOptionsMenuBase::HandleBack()
 {
-     // Noņemam šo logrīku no ekrāna caur UIManager
     UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (UIMan)
+    if (!UIMan) return;
+
+    // Ja ir nesaglabātas izmaiņas...
+    if (PendingCategories.Num() > 0)
     {
-        UIMan->PopWidget(); // Šis noņems Options un atgriezīs fokusu uz Main Menu
+        UUIConfirmationPopup* Popup = UIMan->PushConfirmationPopup(
+            FText::FromString("Unsaved Changes"), 
+            10.0f
+        );
+
+        if (Popup)
+        {
+            // Ja apstiprina iziešanu, mēs vienkārši taisām divus Popus (vienu priekš brīdinājuma, otru lai aizvērtu šo)
+            Popup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::HandleCancel); // Atceļam izmaiņas
+            Popup->OnConfirmed.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);  // Aizveram brīdinājumu
+            Popup->OnConfirmed.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);  // Aizveram Options
+
+            Popup->OnTimedOutOrCancelled.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget); // Tikai aizveram brīdinājumu
+        }
+    }
+    else
+    {
+        UIMan->PopWidget(); // Izejam uzreiz
     }
 }
 

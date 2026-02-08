@@ -7,7 +7,7 @@
 class UMenuDropdownWidget;
 class UMenuSliderWidget;
 class UMenuCheckBoxWidget;
-class UOptionsBaseWidget;
+class UUIOptionsMenuBase; // Izmantojam tavu jauno klasi
 
 UCLASS()
 class SECONDCHANCE_API UGraphicsOptionsCategoryWidget : public UOptionsCategoryBaseWidget
@@ -61,7 +61,7 @@ protected:
 
 private:
     void PopulateComboBoxes();
-    UOptionsBaseWidget* GetParentOptions() const;
+    UUIOptionsMenuBase* GetParentOptions() const;
     
     TArray<FIntPoint> ResolutionsArray;
     const TArray<FString> QualityLabels = { TEXT("Low"), TEXT("Medium"), TEXT("High"), TEXT("Epic"), TEXT("Cinematic") };

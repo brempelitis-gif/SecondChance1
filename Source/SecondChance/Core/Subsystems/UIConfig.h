@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/DataAsset.h"
 #include "UI/Base/UIBaseWidget.h"
+#include "UI/Base/ConfirmationPopUp/UIConfirmationPopup.h"
 #include "UIConfig.generated.h"
 
 UCLASS(BlueprintType)
@@ -23,6 +24,10 @@ public:
 	// Pause Menu Widget
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
 	TSubclassOf<UUIBaseWidget> PauseMenuClass;
+
+	// Confirmation Popup Widget
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Classes|Popups")
+	TSubclassOf<UUIConfirmationPopup> ConfirmationPopupClass;
 
 	UPROPERTY(EditDefaultsOnly, Category="Audio")
 	USoundClass* MasterSoundClass;

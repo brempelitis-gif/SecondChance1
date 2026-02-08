@@ -12,38 +12,29 @@ void UOptionsCategoryBaseWidget::NativeOnInitialized()
 	{
 		UIManager = GI->GetSubsystem<UUIManagerSubsystem>();
 	}
-
-	// 2. Atrodam OptionsBaseWidget, ejot uz augšu pa hierarhiju
-	UOptionsBaseWidget* ParentOptions = nullptr;
-	UWidget* CurrentParent = GetParent();
-    
-	while (CurrentParent)
-	{
-		ParentOptions = Cast<UOptionsBaseWidget>(CurrentParent);
-		if (ParentOptions) break;
-        
-		CurrentParent = CurrentParent->GetParent();
-	}
-
-	// 3. Piesaistāmies delegātam
+	// Izmantojam GetTypedOuter, kas ir Unreal iebūvēts un daudz ātrāks veids par manuālu while cilpu
+	UUIOptionsMenuBase* ParentOptions = Cast<UUIOptionsMenuBase>(GetTypedOuter<UUIOptionsMenuBase>());
+	
 	if (ParentOptions)
 	{
-		ParentOptions->OnSettingsChanged.AddDynamic(this, &UOptionsCategoryBaseWidget::HandleSettingsChanged);
-		UE_LOG(LogTemp, Log, TEXT("Category %d successfully bound to OptionsBaseWidget"), (int32)Category);
+		// Pārbaudām vai jau neesam piesaistīti
+		if (!ParentOptions->OnSettingsChanged.IsAlreadyBound(this, &UOptionsCategoryBaseWidget::HandleSettingsChanged))
+		{
+			ParentOptions->OnSettingsChanged.AddDynamic(this, &UOptionsCategoryBaseWidget::HandleSettingsChanged);
+			UE_LOG(LogTemp, Log, TEXT("Kategorija %d veiksmīgi piesaistīta UUIOptionsMenuBase"), (int32)Category);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Kategorija %d NEVARĒJA atrast tēvu! Pārbaudi WBP hierarhiju."), (int32)Category);
 	}
 }
-
 void UOptionsCategoryBaseWidget::NativeDestruct()
 {
-	/*
-	if (UIManager)
+	if (UUIOptionsMenuBase* ParentOptions = Cast<UUIOptionsMenuBase>(GetTypedOuter<UUIOptionsMenuBase>()))
 	{
-		UIManager->OnSettingsChanged.RemoveDynamic(
-			this,
-			&UOptionsCategoryBaseWidget::HandleSettingsChanged
-		);
-	}*/
-
+		ParentOptions->OnSettingsChanged.RemoveDynamic(this, &UOptionsCategoryBaseWidget::HandleSettingsChanged);
+	}
 	Super::NativeDestruct();
 }
 
