@@ -25,7 +25,8 @@ public:
 
 protected:
 	virtual void NativePreConstruct() override;
-    virtual void NativeDestruct() override;
+	void NativeConstruct();
+	virtual void NativeDestruct() override;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* DescriptionLabel;

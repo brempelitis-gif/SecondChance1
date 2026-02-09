@@ -83,19 +83,12 @@ void UAudioOptionsCategoryWidget::RefreshFromParent()
     }
 
     bIsRefreshing = true;
-    // Izmantojam lokālos mainīgos, lai debugotu
-        float M = Parent->GetPendingMasterVolume();
-        float Mus = Parent->GetPendingMusicVolume();
-        float S = Parent->GetPendingSFXVolume();
-    
-        UE_LOG(LogTemp, Warning, TEXT("Kategorija atsvaidzina slaiderus: M:%f, Mus:%f, S:%f"), M, Mus, S);
 
-    if (MasterSlider) MasterSlider->SetValue(M);
-    if (MusicSlider)  MusicSlider->SetValue(Mus);
-    if (SFXSlider)    SFXSlider->SetValue(S);
+    if (MasterSlider) MasterSlider->SetValue(Parent->GetPendingMasterVolume());
+    if (MusicSlider)  MusicSlider->SetValue(Parent->GetPendingMusicVolume());
+    if (SFXSlider)    SFXSlider->SetValue(Parent->GetPendingSFXVolume());
 
     bIsRefreshing = false;
-    UE_LOG(LogTemp, Log, TEXT("AudioCategory: Dati atsvaidzināti (M:%f)"), M);
 }
 UUIOptionsMenuBase* UAudioOptionsCategoryWidget::GetParentOptions() const
 {

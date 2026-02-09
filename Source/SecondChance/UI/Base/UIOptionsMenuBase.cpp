@@ -93,29 +93,23 @@ void UUIOptionsMenuBase::ApplyGraphicsSettings()
     UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
     if (!UIMan) return;
 
-    // 1. Provizoriski piemērojam iestatījumus
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
     {
         Settings->ApplySettings(false);
     }
 
-    // 2. Caur subsystemu uzstumjam Pop-up
-    UUIConfirmationPopup* Popup = UIMan->PushConfirmationPopup(
-        FText::FromString("Graphics"), 
-        15.0f
-    );
+    UUIConfirmationPopup* Popup = UIMan->PushConfirmationPopup(FText::FromString("Graphics"), 15.0f);
 
     if (Popup)
     {
-        // 3. Piesaistāmies rezultātam
         Popup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::ConfirmGraphicsChanges);
         Popup->OnTimedOutOrCancelled.AddUniqueDynamic(this, &UUIOptionsMenuBase::RevertGraphicsChanges);
         
-        // Papildus: Ja gribam, lai Pop-up aizveroties "izlec" no stacka:
         Popup->OnConfirmed.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);
         Popup->OnTimedOutOrCancelled.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);
     }
 }
+
 void UUIOptionsMenuBase::ConfirmGraphicsChanges()
 {
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
@@ -123,33 +117,39 @@ void UUIOptionsMenuBase::ConfirmGraphicsChanges()
         Settings->ConfirmVideoMode();
         Settings->SaveSettings();
         
-        PendingCategories.Remove(ESettingsCategory::Graphics); // Tagad viss kārtībā var nonemt
+        PendingCategories.Remove(ESettingsCategory::Graphics);
         UpdateActionButtonsVisibility();
-        UE_LOG(LogTemp, Log, TEXT("Grafika apstiprināta un saglabāta."));
     }
 }
+
 void UUIOptionsMenuBase::RevertGraphicsChanges()
 {
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
     {
-        // 1. Atgriežam video režīmu (rezolūcija, fullscreen)
-        Settings->RevertVideoMode();
-        
-        // 2. Piespiežam pārlādēt pārējos iestatījumus no diska (kvalitāte, vsync)
+        // 1. Vispirms ielādējam to, kas ir saglabāts diskā (Config/Windows/GameUserSettings.ini)
         Settings->LoadSettings(true);
-        
-        // 3. Piemērojam atpakaļ (lai vizuāli viss mainās uzreiz)
-        Settings->ApplySettings(false);
 
-        // 4. Svarīgi: Paziņojam visiem bērniem, ka dati ir mainīti
-        // Maza pauze, lai Unreal paspēj sagremot izmaiņas
-        FTimerHandle RefreshTimer;
-        GetWorld()->GetTimerManager().SetTimer(RefreshTimer, [this]()
-        {
-            OnSettingsChanged.Broadcast(ESettingsCategory::Graphics);
-        }, 0.1f, false);
+        // 2. PIESPIEDU KĀRTĀ pārrakstām atmiņā esošo rezolūciju uz "LastConfirmed"
+        // Tas ir kritiski, jo dažreiz LoadSettings nepārraksta "Current" vērtības, ja tās ir "Dirty"
+        FIntPoint SavedRes = Settings->GetLastConfirmedScreenResolution();
+        Settings->SetScreenResolution(SavedRes);
+
+        // Ja izmanto arī Fullscreen Mode, atjaunojam arī to
+        EWindowMode::Type SavedMode = Settings->GetLastConfirmedFullscreenMode();
+        Settings->SetFullscreenMode(SavedMode);
         
-        UE_LOG(LogTemp, Warning, TEXT("Grafika revertēta. UI tiek atsvaidzināts."));
+        // 3. Tagad, kad atmiņā ir vecie dati, mēs tos piemērojam
+        Settings->ApplySettings(false);
+        
+        // 4. Maza pauze pirms UI atjaunošanas
+        FTimerHandle TempHandle;
+        GetWorld()->GetTimerManager().SetTimer(TempHandle, [this]()
+        {OnSettingsChanged.Broadcast(ESettingsCategory::Graphics);
+             
+             PendingCategories.Remove(ESettingsCategory::Graphics);
+             UpdateActionButtonsVisibility();
+
+        }, 0.1f, false);
     }
 }
 
@@ -295,7 +295,6 @@ void UUIOptionsMenuBase::LoadAudioSettings()
         SetMasterVolume(CurrentMasterVolume); 
         SetMusicVolume(CurrentMusicVolume); 
         SetSFXVolume(CurrentSFXVolume);
-        UE_LOG(LogTemp, Warning, TEXT("Ielādēts Master no Save: %f"), CurrentMasterVolume);
     }
 }
 

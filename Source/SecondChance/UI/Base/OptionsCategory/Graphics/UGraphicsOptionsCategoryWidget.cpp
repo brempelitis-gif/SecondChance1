@@ -30,10 +30,12 @@ void UGraphicsOptionsCategoryWidget::NativeOnInitialized()
 void UGraphicsOptionsCategoryWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+    
     PopulateComboBoxes();
-	// Tāpat kā Audio, dodam mazu brīdi ielādei
-	FTimerHandle RefreshHandle;
-	GetWorld()->GetTimerManager().SetTimer(RefreshHandle, this, &UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings, 0.1f, false);
+    
+    // Neliela aizkave, lai nodrošinātu, ka viss ir gatavs
+    FTimerHandle RefreshHandle;
+    GetWorld()->GetTimerManager().SetTimer(RefreshHandle, this, &UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings, 0.1f, false);
 }
 
 UUIOptionsMenuBase* UGraphicsOptionsCategoryWidget::GetParentOptions() const
@@ -79,6 +81,7 @@ void UGraphicsOptionsCategoryWidget::PopulateComboBoxes()
 
 void UGraphicsOptionsCategoryWidget::HandleSettingsChanged(ESettingsCategory ChangedCategory)
 {
+    // Ja mainījās grafika vai nekas (Cancel/Revert gadījumā), atsvaidzinām
     if (ChangedCategory == ESettingsCategory::Graphics || ChangedCategory == ESettingsCategory::None)
     {
         RefreshUIFromCurrentSettings();
@@ -87,64 +90,62 @@ void UGraphicsOptionsCategoryWidget::HandleSettingsChanged(ESettingsCategory Cha
 
 void UGraphicsOptionsCategoryWidget::RefreshUIFromCurrentSettings()
 {
-	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
-	if (!Settings) return;
+    UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+    if (!Settings) return;
 
-	bIsRefreshing = true; // Nobloķējam, lai dropdownu maiņa neizsauktu Apply atkal
+    bIsRefreshing = true;
 
-	// 1. Rezolūcija
-	if (ResolutionCombo)
-	{
-		int32 ResIndex = ResolutionsArray.Find(Settings->GetScreenResolution());
-		if (ResIndex != INDEX_NONE) 
-		{
-			ResolutionCombo->SetSelectedIndex(ResIndex);
-		}
-	}
+    // --- Resolution ---
+    if (ResolutionCombo)
+    {
+        FIntPoint CurrentRes = Settings->GetScreenResolution();
+        int32 ResIndex = ResolutionsArray.Find(CurrentRes);
+        
+        if (ResIndex != INDEX_NONE) 
+        {
+            ResolutionCombo->SetSelectedIndex(ResIndex);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("GRAPHICS_WIDGET: Rezolūcija nav atrasta sarakstā!"));
+        }
+    }
 
-	// 2. Kvalitāte (Overall Scalability)
-	if (QualityCombo) 
-	{
-		int32 Quality = Settings->GetOverallScalabilityLevel();
-		QualityCombo->SetSelectedIndex(Quality);
-	}
+    // --- Quality ---
+    if (QualityCombo) 
+    {
+        int32 Qual = Settings->GetOverallScalabilityLevel();
+        QualityCombo->SetSelectedIndex(Qual);
+    }
 
-	// 3. Loga režīms
-	if (WindowModeCombo) 
-	{
-		WindowModeCombo->SetSelectedIndex((int32)Settings->GetFullscreenMode());
-	}
+    // --- Window Mode ---
+    if (WindowModeCombo)
+    {
+        int32 Mode = (int32)Settings->GetFullscreenMode();
+        WindowModeCombo->SetSelectedIndex(Mode);
+    }
 
-	// 4. VSync
-	if (VSyncCheckBox) 
-	{
-		VSyncCheckBox->SetIsChecked(Settings->IsVSyncEnabled());
-	}
-
-	// 5. Resolution Scale
-	if (ResolutionScaleSlider) 
-	{
-		// Normalized vērtība ir 0.0 - 1.0 (vai 10-100 atkarībā no versijas)
-		ResolutionScaleSlider->SetValue(Settings->GetResolutionScaleNormalized());
-	}
-
-	bIsRefreshing = false;
-	UE_LOG(LogTemp, Log, TEXT("Graphics UI atsvaidzināts no GameUserSettings."));
+    bIsRefreshing = false;
 }
 
 void UGraphicsOptionsCategoryWidget::HandleResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	if (bIsRefreshing || SelectionType == ESelectInfo::Direct) return;
-    
-	int32 Index = ResolutionCombo->GetSelectedIndex();
-	if (ResolutionsArray.IsValidIndex(Index))
-	{
-		if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
-		{
-			Settings->SetScreenResolution(ResolutionsArray[Index]);
-			if (UUIOptionsMenuBase* Parent = GetParentOptions()) Parent->MarkCategoryPending(ESettingsCategory::Graphics);
-		}
-	}
+    if (bIsRefreshing) return;
+    if (SelectionType == ESelectInfo::Direct) return;
+
+    int32 Index = ResolutionCombo->GetSelectedIndex();
+    if (ResolutionsArray.IsValidIndex(Index))
+    {
+        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        {
+            Settings->SetScreenResolution(ResolutionsArray[Index]);
+            // Nemainām ApplySettings šeit, tikai marķējam kā Pending
+            if (UUIOptionsMenuBase* Parent = GetParentOptions()) 
+            {
+                Parent->MarkCategoryPending(ESettingsCategory::Graphics);
+            }
+        }
+    }
 }
 
 void UGraphicsOptionsCategoryWidget::HandleQualityChanged(FString SelectedItem, ESelectInfo::Type SelectionType)

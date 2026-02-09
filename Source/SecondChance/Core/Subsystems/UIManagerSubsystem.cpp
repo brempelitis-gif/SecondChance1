@@ -13,14 +13,6 @@ void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			UIConfig = GI->UIConfig;
 		}
 	}
-	if (UIConfig)
-	{
-		UE_LOG(LogTemp, Log, TEXT("UIManager: UIConfig ielādēts veiksmīgi!"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("UIManager: UIConfig NAV ATRASTS! UI nevarēs darboties."));
-	}
 }
 UUIConfirmationPopup* UUIManagerSubsystem::PushConfirmationPopup(FText CategoryName, float Timeout)
 {
