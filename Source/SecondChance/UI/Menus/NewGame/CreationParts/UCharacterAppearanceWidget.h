@@ -2,13 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "UI/Menus/NewGame/ACharacterPreviewActor.h"
+#include "Core/Structs/FCharacterCustomizationData.h"
+#include "UI/Menus/NewGame/CreationParts/CharacterActor/ACharacterSetupActor.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h" // Tavs Button include
 #include "UI/Base/MenuSlider/MenuSliderWidget.h" // Tavs Slider include
 #include "UI/Base/MenuEditableText/UMenuEditableTextWidget.h"
+#include "UI/Base/MenuCheckBox/MenuCheckBoxWidget.h"
 #include "UCharacterAppearanceWidget.generated.h"
 
-class UMenuDropdownWidget;
+class UMenuCheckBoxWidget;
 class UMenuEditableTextWidget;
 
 // Definējam delegātu faila augšā
@@ -27,7 +29,7 @@ protected:
 	UMenuEditableTextWidget* NameInput;
 
 	UPROPERTY(meta = (BindWidget))
-	UMenuDropdownWidget* GenderCombo;
+	UMenuCheckBoxWidget* GenderCheckBox; // Pārvērtām no Dropdown uz CheckBox vienkāršībai True = Female, False = Male
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuSliderWidget* HeightSlider;
@@ -62,12 +64,17 @@ protected:
 	// --- Dati ---
 	FCharacterCustomizationData CurrentData;
     
+	// Atsauce uz aktieri līmenī
 	UPROPERTY()
-	ACharacterPreviewActor* CachedPreviewActor;
+	ACharacterSetupActor* PreviewActor;
+
+	ACharacterSetupActor* CachedPreviewActor;
+	// Mainīgie loģikai
+	bool bIsFemaleSelected = false;
 
 	// --- Handleri ---
 	UFUNCTION() void HandleNameChanged(const FText& Text);
-	UFUNCTION() void HandleGenderChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	UFUNCTION() void HandleGenderChanged(bool bIsChecked);
 	UFUNCTION() void HandleHeightChanged(float Value);
 	UFUNCTION() void HandleWeightChanged(float Value);
 	UFUNCTION() void HandleRotateLeft();
@@ -76,7 +83,8 @@ protected:
 	UFUNCTION() void HandleNextClicked();
 
 private:
-	void FindPreviewActor();
+	void FindPreviewActor();// Palīgfunkcija
+	void UpdateNextButtonState(); // Validācija
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnStepNavigationRequested OnNextStepRequested;

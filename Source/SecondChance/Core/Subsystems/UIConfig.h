@@ -18,8 +18,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
 	TSubclassOf<UUIBaseWidget> MainMenuClass;
 
+	// Options Menu Widget
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Classes")
 	TSubclassOf<class UUIOptionsMenuBase> OptionsMenuClass;
+
+	// Character Appearance Widget (New Game)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
+	TSubclassOf<class UCharacterCreationMain> NewGameWidgetClass;
 	
 	// Pause Menu Widget
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
@@ -37,4 +42,5 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category="Audio")
 	USoundClass* SFXSoundClass;
+	
 };

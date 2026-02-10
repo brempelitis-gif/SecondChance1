@@ -3,7 +3,7 @@
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "UI/Base/UIOptionsMenuBase.h"
+#include "UI/Menus/Options/UIOptionsMenuBase.h"
 
 void UMainMenuWidget::NativeOnInitialized()
 {
@@ -39,8 +39,11 @@ void UMainMenuWidget::HandleContinueClicked()
 
 void UMainMenuWidget::HandleNewGameClicked()
 {
-    // Piemērs: Ielādējam pirmo līmeni
-    UGameplayStatics::OpenLevel(this, FName("L_StarterLevel"));
+    UE_LOG(LogTemp, Log, TEXT("New Game Pressed"));
+    // Izmantojam asinhrono ielādi vai vienkāršo OpenLevel.
+    // L_CharacterSetup ir tavas kartes precīzs nosaukums.
+    UGameplayStatics::OpenLevel(this, FName("/Game/ManaSpele/Levels/L_CharacterSetup"));
+    
 }
 
 void UMainMenuWidget::HandleOptionsClicked()

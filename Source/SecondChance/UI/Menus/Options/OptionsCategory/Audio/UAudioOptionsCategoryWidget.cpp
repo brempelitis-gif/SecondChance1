@@ -1,10 +1,10 @@
-#include "UI/Base/OptionsCategory/Audio/UAudioOptionsCategoryWidget.h"
+#include "UI/Menus/Options/OptionsCategory/Audio/UAudioOptionsCategoryWidget.h"
 
 #include "Components/PanelWidget.h"
 #include "UI/Base/MenuSlider/MenuSliderWidget.h"
 #include "UI/Menus/Options/OptionsBaseWidget.h" // Nepieciešams castam
 
-#include "UI/Base/UIOptionsMenuBase.h" // Svarīgi: Īstais headeris
+#include "UI/Menus/Options/UIOptionsMenuBase.h" // Svarīgi: Īstais headeris
 
 void UAudioOptionsCategoryWidget::NativeOnInitialized()
 {

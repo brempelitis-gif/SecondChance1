@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/Base/OptionsCategory/OptionsCategoryBaseWidget.h"
+#include "UI/Menus/Options/OptionsCategory/OptionsCategoryBaseWidget.h"
 #include "UGraphicsOptionsCategoryWidget.generated.h"
 
 class UMenuDropdownWidget;

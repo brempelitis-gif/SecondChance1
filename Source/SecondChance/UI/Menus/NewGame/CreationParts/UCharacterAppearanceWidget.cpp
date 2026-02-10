@@ -29,7 +29,7 @@ void UCharacterAppearanceWidget::NativeOnInitialized()
     if (NameInput) NameInput->OnTextChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleNameChanged);
     
     // 2. Dropdown (Gender)
-    if (GenderCombo) GenderCombo->OnSelectionChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleGenderChanged);
+    if (GenderCheckBox) GenderCheckBox->OnCheckStateChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleGenderChanged);
     
     // 3. Slider (Height) - Izmantojam tavu OnValueChanged delegātu
     if (HeightSlider) HeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleHeightChanged);
@@ -50,10 +50,19 @@ void UCharacterAppearanceWidget::NativeOnInitialized()
 
 void UCharacterAppearanceWidget::FindPreviewActor()
 {
-    AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ACharacterPreviewActor::StaticClass());
-    CachedPreviewActor = Cast<ACharacterPreviewActor>(FoundActor);
-    
-    if (CachedPreviewActor) CachedPreviewActor->UpdatePreview(CurrentData);
+    // Atrod pirmo CharacterSetupActor līmenī
+    AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ACharacterSetupActor::StaticClass());
+    PreviewActor = Cast<ACharacterSetupActor>(FoundActor);
+     if (!PreviewActor)
+     {
+         UE_LOG(LogTemp, Error, TEXT("CharacterAppearanceWidget: Neizdevās atrast CharacterSetupActor līmenī!"));
+     }
+      else
+     {
+         // Ja atrasts, saglabājam kešā un ielādējam sākotnējos datus
+         CachedPreviewActor = PreviewActor;
+         CachedPreviewActor->UpdatePreview(CurrentData);
+     }
 }
 
 void UCharacterAppearanceWidget::HandleNameChanged(const FText& Text)
@@ -63,24 +72,30 @@ void UCharacterAppearanceWidget::HandleNameChanged(const FText& Text)
     if (NextBtn) NextBtn->SetIsEnabled(!Text.IsEmpty());
 }
 
-void UCharacterAppearanceWidget::HandleGenderChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void UCharacterAppearanceWidget::HandleGenderChanged(bool bIsChecked)
 {
-    if (SelectionType == ESelectInfo::Direct) return;
-
-    CurrentData.bIsMale = (GenderCombo->GetSelectedIndex() == 0);
-    if (CachedPreviewActor) CachedPreviewActor->UpdatePreview(CurrentData);
+    bIsFemaleSelected = bIsChecked;
+    
+    if (PreviewActor)
+    {
+        PreviewActor->UpdateGenderVisuals(bIsFemaleSelected);
+        
+        // Pārrēķinām augstumu, jo sievietēm skala ir citādāka
+        float CurrentSliderVal = HeightSlider ? HeightSlider->GetValue() : 0.5f;
+        PreviewActor->UpdateHeight(CurrentSliderVal, bIsFemaleSelected);
+    }
 }
 
 void UCharacterAppearanceWidget::HandleHeightChanged(float Value)
 {
-    CurrentData.HeightScale = Value;
-    if (CachedPreviewActor) CachedPreviewActor->UpdatePreview(CurrentData);
+    if (PreviewActor)
+    {
+        PreviewActor->UpdateHeight(Value, bIsFemaleSelected);
+    }
 }
 
 void UCharacterAppearanceWidget::HandleWeightChanged(float Value)
 {
-    CurrentData.WeightScale = Value;
-    if (CachedPreviewActor) CachedPreviewActor->UpdatePreview(CurrentData);
 }
 
 void UCharacterAppearanceWidget::HandleRotateLeft()
@@ -95,9 +110,15 @@ void UCharacterAppearanceWidget::HandleRotateRight()
 
 void UCharacterAppearanceWidget::HandleBackClicked()
 {
-    //UGameplayStatics::OpenLevel(this, FName("L_MainMenu"));
+    UGameplayStatics::OpenLevel(this, FName("/Game/ManaSpele/Levels/L_MainMenu"));
 }
-
+void UCharacterAppearanceWidget::UpdateNextButtonState()
+{
+    bool bNameValid = NameInput && !NameInput->GetText().IsEmpty();
+    // Pievieno citas pārbaudes (Age, etc.)
+    
+    if (NextBtn) NextBtn->SetIsEnabled(bNameValid);
+}
 void UCharacterAppearanceWidget::HandleNextClicked()
 {
     // Šeit vēlāk notiks pāreja uz Skill Tree

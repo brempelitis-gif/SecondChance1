@@ -3,7 +3,7 @@
 #include "UI/Base/UIBaseWidget.h"
 #include "Core/Enums/ESettingsCategory.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
-#include "UI/Base/UIOptionsMenuBase.h" // Izmanto jauno headeri
+#include "UI/Menus/Options//UIOptionsMenuBase.h" // Izmanto jauno headeri
 #include "OptionsCategoryBaseWidget.generated.h"
 
 UCLASS(Abstract)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/Base/OptionsCategory/OptionsCategoryBaseWidget.h"
+#include "UI/Menus/Options//OptionsCategory/OptionsCategoryBaseWidget.h"
 #include "UI/Settings/AudioOptionType.h"
 #include "UAudioOptionsCategoryWidget.generated.h"
 

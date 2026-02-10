@@ -1,10 +1,10 @@
-#include "UI/Base/OptionsCategory/Graphics/UGraphicsOptionsCategoryWidget.h"
+#include "UI/Menus/Options//OptionsCategory/Graphics/UGraphicsOptionsCategoryWidget.h"
 #include "GameFramework/GameUserSettings.h"
 #include "UI/Base/MenuCheckBox/MenuCheckBoxWidget.h"
 #include "UI/Base/MenuDropdown/MenuDropdownWidget.h"
 #include "UI/Base/MenuSlider/MenuSliderWidget.h"
 #include "UI/Menus/Options/OptionsBaseWidget.h"
-#include "UI/Base/UIOptionsMenuBase.h" // Svarīgi: Īstais headeris
+#include "UI/Menus/Options/UIOptionsMenuBase.h" // Svarīgi: Īstais headeris
 
 void UGraphicsOptionsCategoryWidget::NativePreConstruct()
 {

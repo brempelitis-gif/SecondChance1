@@ -1,7 +1,7 @@
 #include "UCharacterCreationMain.h"
 #include "Components/WidgetSwitcher.h"
 #include "CreationParts/USkillTreeWidget.h"
-#include "UI/Menus/NewGame/UCharacterAppearanceWidget.h"
+#include "UI/Menus/NewGame/CreationParts/UCharacterAppearanceWidget.h"
 
 void UCharacterCreationMain::NativeOnInitialized()
 {
