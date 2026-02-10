@@ -2,8 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "UI/Menus/NewGame/CreationParts/UCharacterAppearanceWidget.h"
 #include "ACharacterSetupActor.generated.h"
+
+// Forward declaration, lai izvairītos no Circular Dependency
+struct FCharacterCustomizationData;
 
 UCLASS()
 class SECONDCHANCE_API ACharacterSetupActor : public AActor
@@ -13,25 +15,31 @@ class SECONDCHANCE_API ACharacterSetupActor : public AActor
 public:    
 	ACharacterSetupActor();
 
-	// Vizuālais elements (Kapsula vai Mesh)
+	// Galvenais modelis (Kapsula vai Mesh)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visuals")
 	UStaticMeshComponent* PreviewMesh;
 
-	// Materiāli krāsu maiņai (Zils/Sarkans)
+	// Materiālu sagataves, ko iestatīsi Unreal Editorā
 	UPROPERTY(EditDefaultsOnly, Category = "Visuals")
 	UMaterialInterface* MaleMaterial;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Visuals")
 	UMaterialInterface* FemaleMaterial;
 
-	// Funkcijas, ko izsauks UI
-	UFUNCTION(BlueprintCallable)
-	void UpdateGenderVisuals(bool bIsFemale);
-
-	UFUNCTION(BlueprintCallable)
-	void UpdateHeight(float NormalizedHeight, bool bIsFemale); // 0.0 līdz 1.0
-
-	UFUNCTION(BlueprintCallable)
-	void RotateCharacter(float Value); // -1 (pa kreisi) vai +1 (pa labi)
+	// Funkcija, ko izsauks tavs UI Widget
+	UFUNCTION(BlueprintCallable, Category = "Character Customization")
 	void UpdatePreview(const FCharacterCustomizationData& CurrentData);
+
+	// Funkcija tēla pagriešanai
+	UFUNCTION(BlueprintCallable, Category = "Character Customization")
+	void RotateCharacter(float Value);
+
+	void UpdateGenderVisuals(bool bIsMale);
+private:
+	// Mainīgais, kas ļauj mums mainīt krāsu reāllaikā
+	UPROPERTY()
+	UMaterialInstanceDynamic* CurrentDynamicMaterial;
+
+	
+	void UpdateSkinColor(FLinearColor NewColor);
 };

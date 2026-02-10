@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/Structs/FCharacterCustomizationData.h"
-#include "UI/Menus/NewGame/CreationParts/CharacterActor/ACharacterSetupActor.h"
+//#include "UI/Menus/NewGame/CreationParts/CharacterActor/ACharacterSetupActor.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h" // Tavs Button include
 #include "UI/Base/MenuSlider/MenuSliderWidget.h" // Tavs Slider include
 #include "UI/Base/MenuEditableText/UMenuEditableTextWidget.h"
@@ -12,6 +12,8 @@
 
 class UMenuCheckBoxWidget;
 class UMenuEditableTextWidget;
+// ŠIS IR "FORWARD DECLARATION" - Mēs apsolām, ka šī klase eksistē
+class ACharacterSetupActor;
 
 // Definējam delegātu faila augšā
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStepNavigationRequested);
@@ -64,7 +66,6 @@ protected:
 	// --- Dati ---
 	FCharacterCustomizationData CurrentData;
     
-	// Atsauce uz aktieri līmenī
 	UPROPERTY()
 	ACharacterSetupActor* PreviewActor;
 

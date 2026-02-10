@@ -1,7 +1,8 @@
 #include "UCharacterAppearanceWidget.h"
+
+#include "CharacterActor/ACharacterSetupActor.h"
 #include "Components/EditableText.h"
 #include "Kismet/GameplayStatics.h"
-#include "UI/Base/MenuDropdown/MenuDropdownWidget.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "UI/Base/MenuSlider/MenuSliderWidget.h"
 
@@ -11,7 +12,7 @@ void UCharacterAppearanceWidget::NativePreConstruct()
     
     // Uzstādām tekstus izmantojot tavas klases metodes
     if (NameInput) NameInput->SetLabel(NameLabelText);
-    if (GenderCombo) GenderCombo->SetLabel(GenderLabelText);
+    if (GenderCheckBox) GenderCheckBox->SetLabel(GenderLabelText);
     if (HeightSlider) HeightSlider->SetLabel(HeightLabelText);
     if (WeightSlider) WeightSlider->SetLabel(WeightLabelText);
     // Ja tavām pogām ir SetText funkcija:
@@ -47,55 +48,61 @@ void UCharacterAppearanceWidget::NativeOnInitialized()
     // Sākotnējā pogas stāvokļa pārbaude
     if (NextBtn) NextBtn->SetIsEnabled(false);
 }
-
 void UCharacterAppearanceWidget::FindPreviewActor()
 {
-    // Atrod pirmo CharacterSetupActor līmenī
     AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ACharacterSetupActor::StaticClass());
     PreviewActor = Cast<ACharacterSetupActor>(FoundActor);
-     if (!PreviewActor)
-     {
-         UE_LOG(LogTemp, Error, TEXT("CharacterAppearanceWidget: Neizdevās atrast CharacterSetupActor līmenī!"));
-     }
-      else
-     {
-         // Ja atrasts, saglabājam kešā un ielādējam sākotnējos datus
-         CachedPreviewActor = PreviewActor;
-         CachedPreviewActor->UpdatePreview(CurrentData);
-     }
+
+    if (!PreviewActor)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CharacterAppearanceWidget: Neizdevās atrast CharacterSetupActor līmenī!"));
+    }
+    else
+    {
+        // Ja atrasts, saglabājam kešā un ielādējam sākotnējos datus
+        CachedPreviewActor = PreviewActor;
+        CachedPreviewActor->UpdatePreview(CurrentData);
+    }
 }
+
+// --- HANDLERI ---
 
 void UCharacterAppearanceWidget::HandleNameChanged(const FText& Text)
 {
     CurrentData.PlayerName = Text.ToString();
-    // Atļaujam Next tikai tad, ja vārds nav tukšs
-    if (NextBtn) NextBtn->SetIsEnabled(!Text.IsEmpty());
+    UpdateNextButtonState();
 }
-
 void UCharacterAppearanceWidget::HandleGenderChanged(bool bIsChecked)
 {
-    bIsFemaleSelected = bIsChecked;
+    // Tavā struktūrā ir bIsMale. Ja Checkbox ir ieķeksēts, pieņemsim, ka tā ir sieviete.
+    CurrentData.bIsMale = !bIsChecked; 
     
-    if (PreviewActor)
+    if (CachedPreviewActor)
     {
-        PreviewActor->UpdateGenderVisuals(bIsFemaleSelected);
-        
-        // Pārrēķinām augstumu, jo sievietēm skala ir citādāka
-        float CurrentSliderVal = HeightSlider ? HeightSlider->GetValue() : 0.5f;
-        PreviewActor->UpdateHeight(CurrentSliderVal, bIsFemaleSelected);
+        CachedPreviewActor->UpdatePreview(CurrentData);
     }
 }
 
 void UCharacterAppearanceWidget::HandleHeightChanged(float Value)
 {
-    if (PreviewActor)
+    CurrentData.HeightScale = Value; // Saglabājam datus struktūrā
+    
+    if (CachedPreviewActor)
     {
-        PreviewActor->UpdateHeight(Value, bIsFemaleSelected);
+        // Sūtam visu struktūru, lai aktieris pārrēķina Z mērogu
+        CachedPreviewActor->UpdatePreview(CurrentData);
     }
 }
 
 void UCharacterAppearanceWidget::HandleWeightChanged(float Value)
 {
+    CurrentData.WeightScale = Value; // Saglabājam datus struktūrā
+    
+    if (CachedPreviewActor)
+    {
+        // Sūtam visu struktūru, lai aktieris pārrēķina X/Y mērogu
+        CachedPreviewActor->UpdatePreview(CurrentData);
+    }
 }
 
 void UCharacterAppearanceWidget::HandleRotateLeft()
