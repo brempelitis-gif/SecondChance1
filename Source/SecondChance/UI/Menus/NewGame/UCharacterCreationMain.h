@@ -10,7 +10,7 @@ class SECONDCHANCE_API UCharacterCreationMain : public UUserWidget
 	GENERATED_BODY()
 
 protected:
-	virtual void NativeOnInitialized() override;
+	void NativeConstruct();
 
 	// Galvenais komponents logu pārslēgšanai
 	UPROPERTY(meta = (BindWidget))
@@ -21,7 +21,7 @@ protected:
 	class UCharacterAppearanceWidget* AppearanceStep;
 
 	UPROPERTY(meta = (BindWidget))
-	class USkillTreeWidget* SkillTreeStep; // Pieņemot, ka tev būs šāda klase
+	class UCharacterSkillTreeWidget* SkillTreeStep; // Pieņemot, ka tev būs šāda klase
 
 	// Funkcijas, ko izsauks bērnu logrīki caur delegātiem
 	UFUNCTION() void SwitchToSkillTree();

@@ -12,27 +12,32 @@ void AGM_CharacterSetup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Iegūstam UI sistēmu
 	UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
     
-	if (UIMan && UIMan->UIConfig && UIMan->UIConfig->NewGameWidgetClass)
+	if (UIMan && UIMan->UIConfig)
 	{
-		// Izveidojam Character Setup logrīku
-		UCharacterCreationMain* CharacterWidget = CreateWidget<UCharacterCreationMain>(GetWorld(), UIMan->UIConfig->NewGameWidgetClass);
-		if (CharacterWidget)
+		if (UIMan->UIConfig->NewGameWidgetClass)
 		{
-			// Tā kā šis ir jauns līmenis, Stack ir tukšs. PushWidget to parādīs kā galveno.
-			UIMan->PushWidget(CharacterWidget);
-            
-			// Nodrošinām, ka pele ir redzama un fokuss ir uz UI
-			APlayerController* PC = GetWorld()->GetFirstPlayerController();
-			if (PC)
+			UCharacterCreationMain* CharacterWidget = CreateWidget<UCharacterCreationMain>(GetWorld(), UIMan->UIConfig->NewGameWidgetClass);
+          
+			if (CharacterWidget)
 			{
-				FInputModeUIOnly InputMode;
-				InputMode.SetWidgetToFocus(CharacterWidget->TakeWidget());
-				PC->SetInputMode(InputMode);
-				PC->bShowMouseCursor = true;
+				UIMan->PushWidget(CharacterWidget);
 			}
+			else
+			{
+				// Šis izvadīsies, ja NewGameWidgetClass nav UCharacterCreationMain tips
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("GAMEMODE: Failed to cast Widget to UCharacterCreationMain!"));
+             
+				// Alternatīva: parādām jebko, kas tur ir ielikts, lai redzētu, kas notiek
+				UUserWidget* SimpleWidget = CreateWidget<UUserWidget>(GetWorld(), UIMan->UIConfig->NewGameWidgetClass);
+				if (SimpleWidget) {
+					SimpleWidget->AddToViewport();
+				}
+			}
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("GAMEMODE: NewGameWidgetClass is EMPTY in UIConfig!"));
 		}
 	}
 }

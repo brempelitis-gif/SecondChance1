@@ -1,8 +1,8 @@
-#include "UI/Menus/NewGame/CreationParts//USkillTreeWidget.h"
+#include "UCharacterSkillTreeWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 
-void USkillTreeWidget::NativePreConstruct()
+void UCharacterSkillTreeWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
@@ -18,28 +18,27 @@ void USkillTreeWidget::NativePreConstruct()
 	}
 }
 
-void USkillTreeWidget::NativeOnInitialized()
+void UCharacterSkillTreeWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
 	if (BackBtn)
 	{
-		BackBtn->OnClicked.AddDynamic(this, &USkillTreeWidget::HandleBackClicked);
+		BackBtn->OnClicked.AddDynamic(this, &UCharacterSkillTreeWidget::HandleBackClicked);
 	}
 
 	if (PlayBtn)
 	{
-		PlayBtn->OnClicked.AddDynamic(this, &USkillTreeWidget::HandlePlayClicked);
+		PlayBtn->OnClicked.AddDynamic(this, &UCharacterSkillTreeWidget::HandlePlayClicked);
 	}
 }
 
-void USkillTreeWidget::HandleBackClicked()
+void UCharacterSkillTreeWidget::HandleBackClicked()
 {
 	// Izsaucam delegātu, ko klausās UCharacterCreationMain
 	OnBackStepRequested.Broadcast();
 }
 
-void USkillTreeWidget::HandlePlayClicked()
+void UCharacterSkillTreeWidget::HandlePlayClicked()
 {
 	// Šeit mēs ielādējam tavu pirmo spēles karti
 	// Aizstāj "FirstLevelName" ar savu reālo kartes nosaukumu

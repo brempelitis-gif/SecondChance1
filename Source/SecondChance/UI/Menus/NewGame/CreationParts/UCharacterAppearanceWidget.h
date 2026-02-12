@@ -15,8 +15,8 @@ class UMenuEditableTextWidget;
 // ŠIS IR "FORWARD DECLARATION" - Mēs apsolām, ka šī klase eksistē
 class ACharacterSetupActor;
 
-// Definējam delegātu faila augšā
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStepNavigationRequested);
+// Definē delegātu faila augšā (pirms klases)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNextStepRequested);
 UCLASS()
 class SECONDCHANCE_API UCharacterAppearanceWidget : public UUserWidget
 {
@@ -87,6 +87,7 @@ private:
 	void FindPreviewActor();// Palīgfunkcija
 	void UpdateNextButtonState(); // Validācija
 public:
-	UPROPERTY(BlueprintAssignable)
-	FOnStepNavigationRequested OnNextStepRequested;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnNextStepRequested OnNextStepRequested;
 };

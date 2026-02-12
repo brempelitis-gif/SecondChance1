@@ -128,8 +128,13 @@ void UCharacterAppearanceWidget::UpdateNextButtonState()
 }
 void UCharacterAppearanceWidget::HandleNextClicked()
 {
-    // Šeit vēlāk notiks pāreja uz Skill Tree
-    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Switching to Skill Tree..."));
-    // Tā vietā, lai šeit darītu visu loģiku, mēs vienkārši "paziņojam" Masteram
-    OnNextStepRequested.Broadcast();
+    
+    if (OnNextStepRequested.IsBound())
+    {
+        OnNextStepRequested.Broadcast();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("APPEARANCE: No one is listening to OnNextStepRequested!"));
+    }
 }
