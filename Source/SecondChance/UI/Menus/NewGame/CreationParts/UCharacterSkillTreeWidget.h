@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Core/Structs/FCharacterCustomizationData.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "UCharacterSkillTreeWidget.generated.h"
 
@@ -17,11 +18,17 @@ class SECONDCHANCE_API UCharacterSkillTreeWidget : public UUserWidget
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Navigation")
 	FOnSkillTreeNavigationRequested OnBackStepRequested;
+	
+	// Funkcija, lai saņemtu datus no Master logrīka
+    void InitSkillTree(FCharacterCustomizationData& Data) { CurrentData = Data; UpdateUI(); }
 
 protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeOnInitialized() override;
-
+	
+	FCharacterCustomizationData CurrentData;
+    void UpdateUI(); // Atjauno teksta laukus ekrānā
+	
 	UPROPERTY(meta = (BindWidget))
 	UMenuButtonWidget* BackBtn;
 

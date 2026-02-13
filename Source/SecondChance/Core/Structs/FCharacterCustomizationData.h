@@ -22,6 +22,9 @@ struct FCharacterCustomizationData
 
 	UPROPERTY(BlueprintReadWrite)
 	int32 Age = 25;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+    int32 SkillPoints = 10; // Sākuma punkti
 
 	UPROPERTY(BlueprintReadWrite)
 	FLinearColor SkinColor = FLinearColor::White;
