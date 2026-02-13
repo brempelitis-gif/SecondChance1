@@ -1,9 +1,13 @@
 #include "MainMenuWidget.h"
+
+#include "MyGameInstance.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "UI/Menus/Options/UIOptionsMenuBase.h"
+
+class UMyGameInstance;
 
 void UMainMenuWidget::NativeOnInitialized()
 {
@@ -39,10 +43,14 @@ void UMainMenuWidget::HandleContinueClicked()
 
 void UMainMenuWidget::HandleNewGameClicked()
 {
-    UE_LOG(LogTemp, Log, TEXT("New Game Pressed"));
-    // Izmantojam asinhrono ielādi vai vienkāršo OpenLevel.
-    // L_CharacterSetup ir tavas kartes precīzs nosaukums.
-    UGameplayStatics::OpenLevel(this, FName("/Game/ManaSpele/Levels/L_CharacterSetup"));
+    // Izmantojam asinhrono ielādi no GameInstance, lai parādītu Splash Screen un ielādētu nākamo līmeni
+
+    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+    if (GI)
+    {
+    	GI->AsyncLoadGameLevel(FName("L_CharacterSetup"));
+    }
+    //UGameplayStatics::OpenLevel(this, FName("/Game/ManaSpele/Levels/L_CharacterSetup"));
     
 }
 

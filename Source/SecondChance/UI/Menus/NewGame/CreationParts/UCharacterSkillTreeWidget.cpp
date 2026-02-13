@@ -43,31 +43,35 @@ void UCharacterSkillTreeWidget::HandleBackClicked()
 	// Izsaucam delegātu, ko klausās UCharacterCreationMain
 	OnBackStepRequested.Broadcast();
 }
-
 void UCharacterSkillTreeWidget::HandlePlayClicked()
 {
-	// 1. Saglabājam datus GameInstance, lai tie nepazūd
 	UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
 	if (GI)
 	{
-		GI->FinalCharacterData = CurrentData; // CurrentData ir tava FCharacterCustomizationData
-	}
+		// 1. NEVIS pārrakstām, bet PIEVIENOJAM skilus klāt jau esošajiem datiem
+		// Pieņemot, ka tev CurrentData iekš SkillTree satur skilus:
+		//GI->FinalCharacterData.Strength = this->CurrentData.Strength;
+		//GI->FinalCharacterData.Agility = this->CurrentData.Agility;
+		// ... pievieno visus pārējos skilus ...
 
-	// 2. Uzņemam portreta screenshot priekš Save Game saraksta
-	FString SaveName = CurrentData.PlayerName.IsEmpty() ? TEXT("Hero") : CurrentData.PlayerName;
-	FString FileName = SaveName + "_Portrait"; // Paplašinājumu .png Unreal pieliks pats
-    
-	FScreenshotRequest::RequestScreenshot(FileName, false, false);
+		// 2. SAGLABĀJAM DISKĀ (Tikai vienu reizi!)
+		// Šī funkcija atgriež ID, ko izmantosim screenshotam
+		FString UniqueSlotID = GI->CreateNewSaveGame(GI->FinalCharacterData);
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Portrait captured. Loading level..."));
+		// 3. Uzņemam portreta screenshot ar unikālo ID
+		FString FileName = UniqueSlotID + "_Portrait";
+		FScreenshotRequest::RequestScreenshot(FileName, false, false);
 
-	// 3. Izsaucam asinhrono ielādi caur GameInstance pēc maza brīža (lai paspēj uzņemt bildi)
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [GI]()
-	{
-		if (GI)
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Game Saved & Portrait captured."));
+
+		// 4. Asinhronā ielāde
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, [GI]()
 		{
-			GI->AsyncLoadGameLevel(FName("L_GameLevel"));
-		}
-	}, 0.2f, false);
+		   if (GI)
+		   {
+			 GI->AsyncLoadGameLevel(FName("L_GameLevel"));
+		   }
+		}, 0.2f, false);
+	}
 }

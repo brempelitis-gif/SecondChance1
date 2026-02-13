@@ -26,6 +26,8 @@ protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeOnInitialized() override;
 
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	
 	// --- UI Elementi (Tavas klases) ---
 	UPROPERTY(meta = (BindWidget))
 	UMenuEditableTextWidget* NameInput;
@@ -37,7 +39,7 @@ protected:
 	UMenuSliderWidget* HeightSlider;
 
 	UPROPERTY(meta = (BindWidget))
-	class UMenuSliderWidget* WeightSlider;
+	UMenuSliderWidget* WeightSlider;
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuButtonWidget* RotateLeftBtn;
@@ -63,6 +65,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
 	FText WeightLabelText = FText::FromString("Weight");
+
+	// --- Parametri ---
+	UPROPERTY(EditAnywhere, Category = "Appearance|Rotation")
+	float RotationSpeed = 120.0f; // Grādi sekundē
+	
 	// --- Dati ---
 	FCharacterCustomizationData CurrentData;
     
@@ -70,6 +77,11 @@ protected:
 	ACharacterSetupActor* PreviewActor;
 
 	ACharacterSetupActor* CachedPreviewActor;
+
+	// --- Rotācijas stāvoklis ---
+	bool bIsRotatingLeft = false;
+	bool bIsRotatingRight = false;
+	
 	// Mainīgie loģikai
 	bool bIsFemaleSelected = false;
 
@@ -78,10 +90,14 @@ protected:
 	UFUNCTION() void HandleGenderChanged(bool bIsChecked);
 	UFUNCTION() void HandleHeightChanged(float Value);
 	UFUNCTION() void HandleWeightChanged(float Value);
-	UFUNCTION() void HandleRotateLeft();
-	UFUNCTION() void HandleRotateRight();
 	UFUNCTION() void HandleBackClicked();
 	UFUNCTION() void HandleNextClicked();
+
+	// Jauni handleri pogu turēšanai
+	UFUNCTION() void StartRotateLeft() { bIsRotatingLeft = true; }
+	UFUNCTION() void StopRotateLeft() { bIsRotatingLeft = false; }
+	UFUNCTION() void StartRotateRight() { bIsRotatingRight = true; }
+	UFUNCTION() void StopRotateRight() { bIsRotatingRight = false; }
 
 private:
 	void FindPreviewActor();// Palīgfunkcija

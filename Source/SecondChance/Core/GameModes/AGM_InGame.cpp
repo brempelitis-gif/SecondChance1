@@ -29,19 +29,3 @@ void AGM_InGame::BeginPlay()
 		}
 	}
 }
-/*
-// AGM_InGame.cpp
-void AGM_InGame::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// Uzgaidām 0.5 sekundes, lai pasaule paspēj ielādēties vizuāli
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &AGM_InGame::TakeStartScreenshot, 0.5f, false);
-}
-void AGM_InGame::TakeStartScreenshot()
-{
-	FScreenshotRequest::RequestScreenshot("GameStart_Character.png", false, false);
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Screenshot Captured!"));
-}
-*/

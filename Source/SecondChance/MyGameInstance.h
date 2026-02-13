@@ -33,6 +33,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Transitions")
 	void AsyncLoadGameLevel(FName LevelName);
 
+
+	// Konstante indeksa faila nosaukumam
+	const FString MASTER_SAVE_INDEX = "MasterSaveIndex";
+
+	UFUNCTION(BlueprintCallable, Category = "SaveSystem")
+	FString CreateNewSaveGame(FCharacterCustomizationData CharacterData);
+
+private:
+	void UpdateSaveIndex(FString SlotName, FString PlayerName);
 protected:
 	void OnLevelLoaded();
 };

@@ -1,5 +1,6 @@
 #include "UCharacterAppearanceWidget.h"
 
+#include "MyGameInstance.h"
 #include "CharacterActor/ACharacterSetupActor.h"
 #include "Components/EditableText.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,6 +19,9 @@ void UCharacterAppearanceWidget::NativePreConstruct()
     // Ja tavām pogām ir SetText funkcija:
     if (BackBtn) BackBtn->SetLabel(FText::FromString("Back"));
     if (NextBtn) NextBtn->SetLabel(FText::FromString("Next"));
+
+    if (RotateLeftBtn) RotateLeftBtn->SetLabel(FText::FromString("<"));
+    if (RotateRightBtn) RotateRightBtn->SetLabel(FText::FromString(">"));
 }
 
 void UCharacterAppearanceWidget::NativeOnInitialized()
@@ -39,8 +43,21 @@ void UCharacterAppearanceWidget::NativeOnInitialized()
     if (WeightSlider) WeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleWeightChanged);
     
     // 5. Pogas - Izmanto savu pogu delegātu (piem. OnButtonClicked)
-    if (RotateLeftBtn) RotateLeftBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateLeft);
-    if (RotateRightBtn) RotateRightBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateRight);
+    // SVARĪGI: Izmantojam OnPressed un OnReleased gludai rotācijai
+    // Ja tavai UMenuButtonWidget klasei nav šādu delegātu, tie ir jāpievieno tajā (bāzējoties uz UButton)
+    if (RotateLeftBtn)
+    {
+        RotateLeftBtn->OnPressed.AddDynamic(this, &UCharacterAppearanceWidget::StartRotateLeft);
+        RotateLeftBtn->OnReleased.AddDynamic(this, &UCharacterAppearanceWidget::StopRotateLeft);
+    }
+
+    if (RotateRightBtn)
+    {
+        RotateRightBtn->OnPressed.AddDynamic(this, &UCharacterAppearanceWidget::StartRotateRight);
+        RotateRightBtn->OnReleased.AddDynamic(this, &UCharacterAppearanceWidget::StopRotateRight);
+    }
+    //if (RotateLeftBtn) RotateLeftBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateLeft);
+    //if (RotateRightBtn) RotateRightBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateRight);
     
     if (BackBtn) BackBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleBackClicked);
     if (NextBtn) NextBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleNextClicked);
@@ -48,6 +65,24 @@ void UCharacterAppearanceWidget::NativeOnInitialized()
     // Sākotnējā pogas stāvokļa pārbaude
     if (NextBtn) NextBtn->SetIsEnabled(false);
 }
+
+void UCharacterAppearanceWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+    Super::NativeTick(MyGeometry, InDeltaTime);
+
+    if (CachedPreviewActor)
+    {
+        if (bIsRotatingLeft)
+        {
+            CachedPreviewActor->AddActorLocalRotation(FRotator(0, -RotationSpeed * InDeltaTime, 0));
+        }
+        if (bIsRotatingRight)
+        {
+            CachedPreviewActor->AddActorLocalRotation(FRotator(0, RotationSpeed * InDeltaTime, 0));
+        }
+    }
+}
+
 void UCharacterAppearanceWidget::FindPreviewActor()
 {
     AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ACharacterSetupActor::StaticClass());
@@ -105,19 +140,14 @@ void UCharacterAppearanceWidget::HandleWeightChanged(float Value)
     }
 }
 
-void UCharacterAppearanceWidget::HandleRotateLeft()
-{
-    if (CachedPreviewActor) CachedPreviewActor->AddActorLocalRotation(FRotator(0, -15, 0));
-}
-
-void UCharacterAppearanceWidget::HandleRotateRight()
-{
-    if (CachedPreviewActor) CachedPreviewActor->AddActorLocalRotation(FRotator(0, 15, 0));
-}
-
 void UCharacterAppearanceWidget::HandleBackClicked()
 {
-    UGameplayStatics::OpenLevel(this, FName("/Game/ManaSpele/Levels/L_MainMenu"));
+    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+    if (GI)
+    {
+        GI->AsyncLoadGameLevel(FName("L_MainMenu"));
+    }
+    //UGameplayStatics::OpenLevel(this, FName("/Game/ManaSpele/Levels/L_MainMenu"));
 }
 void UCharacterAppearanceWidget::UpdateNextButtonState()
 {
@@ -128,7 +158,16 @@ void UCharacterAppearanceWidget::UpdateNextButtonState()
 }
 void UCharacterAppearanceWidget::HandleNextClicked()
 {
-    
+    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+    if (GI)
+    {
+        // 1. Sinhronizējam vārdu no InputBox
+        if (NameInput) CurrentData.PlayerName = NameInput->GetText().ToString();
+
+        // 2. Ierakstām GameInstance 'pagaidu' atmiņā
+        GI->FinalCharacterData = this->CurrentData;
+    }
+
     if (OnNextStepRequested.IsBound())
     {
         OnNextStepRequested.Broadcast();

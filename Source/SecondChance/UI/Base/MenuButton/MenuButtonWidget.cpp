@@ -10,10 +10,12 @@ void UMenuButtonWidget::NativeOnInitialized()
 
 	if (Button)
 	{
-		Button->OnClicked.AddDynamic(
-			this,
-			&UMenuButtonWidget::HandleButtonClicked
-		);
+		// Standarta klikšķis
+		Button->OnClicked.AddDynamic(this, &UMenuButtonWidget::HandleButtonClicked);
+       
+		// Jaunie notikumi nepārtrauktai darbībai (piem. rotācijai)
+		Button->OnPressed.AddDynamic(this, &UMenuButtonWidget::HandleButtonPressed);
+		Button->OnReleased.AddDynamic(this, &UMenuButtonWidget::HandleButtonReleased);
 	}
 }
 
@@ -39,6 +41,18 @@ FReply UMenuButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 	// Izsaucam bāzes klases loģiku un atgriežam tās rezultātu
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
+// ---  Handleri, kas izsauc Broadcast ---
+
+void UMenuButtonWidget::HandleButtonPressed()
+{
+	OnPressed.Broadcast();
+}
+
+void UMenuButtonWidget::HandleButtonReleased()
+{
+	OnReleased.Broadcast();
+}
+
 void UMenuButtonWidget::HandleButtonClicked()
 {
 	OnClicked.Broadcast();

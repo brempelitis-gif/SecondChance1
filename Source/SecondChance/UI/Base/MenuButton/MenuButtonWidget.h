@@ -6,7 +6,10 @@
 class UButton;
 class UTextBlock;
 
+// Definējam delegātus nospiešanai un atlaišanai
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMenuButtonClicked);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMenuButtonPressed);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMenuButtonReleased);
 
 /**
  * Base class for all menu buttons (Apply, Cancel, Play, etc.)
@@ -23,6 +26,13 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category="MenuButton")
 	FOnMenuButtonClicked OnClicked;
+
+	// Jaunie notikumi gludai rotācijai
+	UPROPERTY(BlueprintAssignable, Category="MenuButton")
+	FOnMenuButtonPressed OnPressed;
+
+	UPROPERTY(BlueprintAssignable, Category="MenuButton")
+	FOnMenuButtonReleased OnReleased;
 
 	/* ================================
 	 * API
@@ -58,7 +68,9 @@ protected:
 	UTextBlock* LabelText;
 
 private:
-	UFUNCTION()
-	void HandleButtonClicked();
+	// Iekšējie handleri, kas "pārsūta" signālus
+	UFUNCTION() void HandleButtonClicked();
+	UFUNCTION() void HandleButtonPressed();
+	UFUNCTION() void HandleButtonReleased();
 };
 
