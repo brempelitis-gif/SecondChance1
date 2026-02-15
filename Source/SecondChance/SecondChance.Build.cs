@@ -21,6 +21,7 @@ public class SecondChance : ModuleRules
 			"Slate",
 			"SlateCore",
 			"RHI",
+			"ImageWrapper",
 			"RenderCore"
 		});
 

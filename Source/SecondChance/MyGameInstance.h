@@ -40,6 +40,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SaveSystem")
 	FString CreateNewSaveGame(FCharacterCustomizationData CharacterData);
 
+	/** Nosaukums slotam, kuru mēs gribam ielādēt pēc līmeņa maiņas */
+	UPROPERTY(BlueprintReadWrite, Category = "SaveSystem")
+	FString CurrentSlotToLoad;
+
+	/** Vai šī ir ielāde no seiva (true) vai jauna spēle (false)? */
+	UPROPERTY(BlueprintReadWrite, Category = "SaveSystem")
+	bool bIsLoadingFromSave = false;
+
 private:
 	void UpdateSaveIndex(FString SlotName, FString PlayerName);
 protected:

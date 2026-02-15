@@ -22,6 +22,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Classes")
 	TSubclassOf<class UUIOptionsMenuBase> OptionsMenuClass;
 
+	// Load Game Menu Widget
+	UPROPERTY(EditAnywhere, Category = "UI|Classes")
+	TSubclassOf<UUserWidget> LoadGameMenuClass;
+	
 	// Character Appearance Widget (New Game)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
 	TSubclassOf<class UCharacterCreationMain> NewGameWidgetClass;

@@ -25,6 +25,11 @@ protected:
 	FText ContinueLabel = FText::FromString("Continue");
 
 	UPROPERTY(meta = (BindWidget))
+	UMenuButtonWidget* LoadGameButton;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Main Menu|Labels")
+	FText LoadGameLabel = FText::FromString("Load Game");
+	
+	UPROPERTY(meta = (BindWidget))
 	UMenuButtonWidget* NewGameButton;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Main Menu|Labels")
 	FText NewGameLabel = FText::FromString("New Game");
@@ -48,6 +53,7 @@ protected:
 private:
 	/** Handleri pogu klikšķiem */
 	UFUNCTION() void HandleContinueClicked();
+	UFUNCTION() void HandleLoadGameClicked();
 	UFUNCTION() void HandleNewGameClicked();
 	UFUNCTION() void HandleOptionsClicked();
 	UFUNCTION() void HandleQuitClicked();
