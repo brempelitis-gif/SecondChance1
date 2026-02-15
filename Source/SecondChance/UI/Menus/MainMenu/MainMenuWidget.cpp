@@ -3,6 +3,7 @@
 #include "MyGameInstance.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
+#include "Core/Save/SaveIndex.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "UI/Menus/LoadGame/LoadGameMenuWidget.h"
@@ -28,6 +29,13 @@ void UMainMenuWidget::NativePreConstruct()
     if (OptionsButton)  OptionsButton->SetLabel(OptionsLabel);
     if (QuitButton)     QuitButton->SetLabel(QuitLabel);
 }
+void UMainMenuWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
+    
+    // Katru reizi, kad logrīks tiek parādīts, pārbaudām seivus
+    RefreshSaveAvailability();
+}
 
 void UMainMenuWidget::BindButtons()
 {
@@ -40,8 +48,36 @@ void UMainMenuWidget::BindButtons()
 
 void UMainMenuWidget::HandleContinueClicked()
 {
-    // TODO: Ielādēt pēdējo saglabāto spēli
-    UE_LOG(LogTemp, Log, TEXT("Continue Game Pressed"));
+    // 1. Ielādējam indeksu
+    USaveIndex* IndexSave = Cast<USaveIndex>(UGameplayStatics::LoadGameFromSlot(TEXT("MasterSaveIndex"), 0));
+    
+    if (IndexSave && IndexSave->SavedGames.Num() > 0)
+    {
+        // 2. Atrodam jaunāko seivu (salīdzinām datumus)
+        FSaveMetadata LatestSave = IndexSave->SavedGames[0];
+        
+        for (const FSaveMetadata& Meta : IndexSave->SavedGames)
+        {
+            if (Meta.SaveDate > LatestSave.SaveDate)
+            {
+                LatestSave = Meta;
+            }
+        }
+
+        // 3. Sagatavojam GameInstance ielādei
+        UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+        if (GI)
+        {
+            // Šeit mēs izmantojam tos mainīgos, ko iepriekš sarunājām pievienot GI
+            GI->CurrentSlotToLoad = LatestSave.SlotName;
+            GI->bIsLoadingFromSave = true;
+
+            UE_LOG(LogTemp, Log, TEXT("Continue: Ielādējam jaunāko slotu: %s"), *LatestSave.SlotName);
+            
+            // 4. Sākam ielādi
+            GI->AsyncLoadGameLevel(FName("L_GameLevel"));
+        }
+    }
 }
 
 void UMainMenuWidget::HandleLoadGameClicked()
@@ -89,4 +125,19 @@ void UMainMenuWidget::HandleOptionsClicked()
 void UMainMenuWidget::HandleQuitClicked()
 {
     UKismetSystemLibrary::QuitGame(GetWorld(), GetWorld()->GetFirstPlayerController(), EQuitPreference::Quit, false);
+}
+
+void UMainMenuWidget::RefreshSaveAvailability()
+{
+    // 1. Mēģinām ielādēt indeksu
+    USaveIndex* IndexSave = Cast<USaveIndex>(UGameplayStatics::LoadGameFromSlot(TEXT("MasterSaveIndex"), 0));
+    
+    // 2. Noskaidrojam, vai ir vismaz viens seivs
+    bool bHasSaves = (IndexSave != nullptr && IndexSave->SavedGames.Num() > 0);
+
+    // 3. Iestatām redzamību. Ja nav seivu - Collapsed (neaizņem vietu) vai Hidden
+    ESlateVisibility SaveVisibility = bHasSaves ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+
+    if (ContinueButton) ContinueButton->SetVisibility(SaveVisibility);
+    if (LoadGameButton) LoadGameButton->SetVisibility(SaveVisibility);
 }

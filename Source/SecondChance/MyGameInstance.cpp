@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
+#include "UI/Base/SplashScreen/Splash.h"
 
 class USaveIndex;
 
@@ -32,15 +33,15 @@ UUIManagerSubsystem* UMyGameInstance::GetUIManager() const
 void UMyGameInstance::AsyncLoadGameLevel(FName LevelName)
 {
 	// 1. Parādām Splash Screen (šeit tu izsauc savu UI sistēmu)
-	if (SplashScreenClass)
+	UUIManagerSubsystem* UIMan = GetUIManager();
+	if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SplashWidgetClass)
 	{
-		UUserWidget* Splash = CreateWidget<UUserWidget>(this, SplashScreenClass);
-		if (Splash)
+		// Izveidojam logrīku
+		UUserWidget* SplasheWidget = CreateWidget<UUserWidget>(GetWorld(), UIMan->UIConfig->SplashWidgetClass);
+		if (SplasheWidget)
 		{
-			if (UUIManagerSubsystem* UIManager = GetSubsystem<UUIManagerSubsystem>())
-			{
-				UIManager->PushWidget(Splash);
-			}
+			// Uzstumjam to uz ekrāna
+			UIMan->PushWidget(SplasheWidget);
 		}
 	}
 	// 2. Ceļa validācija un ielāde
@@ -67,6 +68,10 @@ void UMyGameInstance::AsyncLoadGameLevel(FName LevelName)
 			}
 		}),
 		0, PKG_ContainsMap);
+}
+
+void UMyGameInstance::UpdateSaveIndex(FString SlotName, FString PlayerName)
+{
 }
 
 void UMyGameInstance::OnLevelLoaded()
@@ -143,4 +148,9 @@ FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData Character
 	
 	// Funkcijas beigās atgriežam izmantoto TargetSlotName
 	return TargetSlotName;
+}
+void UMyGameInstance::ClearLoadData()
+{
+    CurrentSlotToLoad = TEXT("");
+    bIsLoadingFromSave = false;
 }

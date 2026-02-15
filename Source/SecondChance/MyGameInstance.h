@@ -16,9 +16,6 @@ class SECONDCHANCE_API UMyGameInstance : public UGameInstance
 public:
 	virtual void Init() override;
 	virtual void Shutdown() override;
-
-	UPROPERTY(EditAnywhere, Category = "UI")
-	TSubclassOf<UUserWidget> SplashScreenClass;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="UI")
 	UUIConfig* UIConfig; // Piesaistām Editorā
@@ -39,6 +36,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "SaveSystem")
 	FString CreateNewSaveGame(FCharacterCustomizationData CharacterData);
+	void ClearLoadData();
 
 	/** Nosaukums slotam, kuru mēs gribam ielādēt pēc līmeņa maiņas */
 	UPROPERTY(BlueprintReadWrite, Category = "SaveSystem")

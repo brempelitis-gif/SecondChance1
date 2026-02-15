@@ -1,9 +1,7 @@
-#include "SplashWidget.h"
-#include "Components/Image.h"
-#include "Components/CircularThrobber.h"
+#include "Splash.h"
 #include "Components/TextBlock.h"
 
-void USplashWidget::NativeConstruct()
+void USplash::NativeConstruct()
 {
 	Super::NativeConstruct();
 
@@ -16,7 +14,7 @@ void USplashWidget::NativeConstruct()
 	// PlayAnimation(FadeInAnimation);
 }
 
-void USplashWidget::SetLoadingText(FText NewText)
+void USplash::SetLoadingText(FText NewText)
 {
 	if (LoadingText)
 	{

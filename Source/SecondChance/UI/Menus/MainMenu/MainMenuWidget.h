@@ -14,6 +14,7 @@ class SECONDCHANCE_API UMainMenuWidget : public UUIBaseWidget
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeConstruct() override;
 	virtual void NativePreConstruct() override;
 
 	/* =======================
@@ -57,6 +58,8 @@ private:
 	UFUNCTION() void HandleNewGameClicked();
 	UFUNCTION() void HandleOptionsClicked();
 	UFUNCTION() void HandleQuitClicked();
-
+	
+	
+	void RefreshSaveAvailability();// palīgfunkcija pogu redzamībai
 	void BindButtons();
 };

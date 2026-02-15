@@ -18,11 +18,10 @@ protected:
 	TSubclassOf<UUserWidget> SplashWidgetClass;
 
 	UPROPERTY()
-	class USplashScreenWidget* SplashWidget;
+	class USplash* SplashWidget;
 
 	FTimerHandle ProgressTimerHandle;
 	FName NextLevelName = TEXT("/Game/ManaSpele/Levels/L_MainMenu");
 
-	void StartAsyncLoad();
-	void UpdateLoadingProgress(); // Funkcija, ko izsauks taimeris
+	void StartAsyncLoad(); // Funkcija, ko izsauks taimeris
 };

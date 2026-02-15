@@ -1,14 +1,12 @@
-#pragma once
-
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "SplashWidget.generated.h"
+#include "Splash.generated.h"
 
 /**
  * C++ bāzes klase Splash Screen logrīkam
  */
 UCLASS()
-class SECONDCHANCE_API USplashWidget : public UUserWidget
+class SECONDCHANCE_API USplash : public UUserWidget
 {
 	GENERATED_BODY()
 
