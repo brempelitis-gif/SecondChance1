@@ -16,70 +16,108 @@ void UCharacterAppearanceWidget::NativePreConstruct()
     if (GenderCheckBox) GenderCheckBox->SetLabel(GenderLabelText);
     if (HeightSlider) HeightSlider->SetLabel(HeightLabelText);
     if (WeightSlider) WeightSlider->SetLabel(WeightLabelText);
-    // Ja tavām pogām ir SetText funkcija:
-    if (BackBtn) BackBtn->SetLabel(FText::FromString("Back"));
-    if (NextBtn) NextBtn->SetLabel(FText::FromString("Next"));
+    
+    if (BackBtn) BackBtn->SetLabel(BackBtnLabelText);
+    if (NextBtn) NextBtn->SetLabel(NextBtnLabelText);
 
-    if (RotateLeftBtn) RotateLeftBtn->SetLabel(FText::FromString("<"));
-    if (RotateRightBtn) RotateRightBtn->SetLabel(FText::FromString(">"));
+    if (RotateLeftBtn) RotateLeftBtn->SetLabel(RotateLeftBtnLabelText);
+    if (RotateRightBtn) RotateRightBtn->SetLabel(RotateRightBtnLabelText);
+}
+
+void UCharacterAppearanceWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
+    
+    FindPreviewActor();
+    
+    // 1. Iestatām Sākuma Vērtības UI (Slaideri pa vidu)
+    float DefaultSliderValue = 0.5f;
+
+    if (HeightSlider) HeightSlider->SetValue(DefaultSliderValue);
+    if (WeightSlider) WeightSlider->SetValue(DefaultSliderValue);
+    
+    // Pieņemsim: Checkbox OFF = Vīrietis, Checkbox ON = Sieviete
+    if (GenderCheckBox) GenderCheckBox->SetIsChecked(false);
+
+    // 2. Piespiedu kārtā izsaucam "Changed" funkcijas, 
+    // lai tās aprēķinātu cm/kg un nosūtītu datus uz 3D aktieri.
+    HandleHeightChanged(DefaultSliderValue);
+    HandleWeightChanged(DefaultSliderValue);
+    HandleGenderChanged(false);
 }
 
 void UCharacterAppearanceWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
-    FindPreviewActor();
+    
 
-    // 1. Ievade
-    if (NameInput) NameInput->OnTextChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleNameChanged);
-    
-    // 2. Dropdown (Gender)
-    if (GenderCheckBox) GenderCheckBox->OnCheckStateChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleGenderChanged);
-    
-    // 3. Slider (Height) - Izmantojam tavu OnValueChanged delegātu
-    if (HeightSlider) HeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleHeightChanged);
+    BindButtons();
+}
 
-    // 4. Slider (Weight) - Izmantojam tavu OnValueChanged delegātu
-    if (WeightSlider) WeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleWeightChanged);
+
+void UCharacterAppearanceWidget::HandleHeightChanged(float Value)
+{
+    // DEFINĪCIJA: 0.0 = 160cm (Scale 0.9), 1.0 = 200cm (Scale 1.1)
+    // Vidus (0.5) = 180cm (Scale 1.0)
     
-    // 5. Pogas - Izmanto savu pogu delegātu (piem. OnButtonClicked)
-    // SVARĪGI: Izmantojam OnPressed un OnReleased gludai rotācijai
-    // Ja tavai UMenuButtonWidget klasei nav šādu delegātu, tie ir jāpievieno tajā (bāzējoties uz UButton)
-    if (RotateLeftBtn)
+    float MinScale = 0.9f;
+    float MaxScale = 1.1f;
+    
+    // Lineārā interpolācija (Lerp)
+    CurrentData.HeightScale = FMath::Lerp(MinScale, MaxScale, Value);
+
+    // Vizuālais teksts (cm)
+    if (HeightSlider)
     {
-        RotateLeftBtn->OnPressed.AddDynamic(this, &UCharacterAppearanceWidget::StartRotateLeft);
-        RotateLeftBtn->OnReleased.AddDynamic(this, &UCharacterAppearanceWidget::StopRotateLeft);
+        // Pieņemsim, ka bāzes modelis (Scale 1.0) ir 180cm
+        float DisplayHeight = CurrentData.HeightScale * 180.0f;
+       // FString Label = FString::Printf(TEXT("%.0f cm"), DisplayHeight);
+       // HeightSlider->SetValueUI(FText::FromString(Label));
+        HeightSlider->SetValueUI(DisplayHeight);
     }
 
-    if (RotateRightBtn)
-    {
-        RotateRightBtn->OnPressed.AddDynamic(this, &UCharacterAppearanceWidget::StartRotateRight);
-        RotateRightBtn->OnReleased.AddDynamic(this, &UCharacterAppearanceWidget::StopRotateRight);
-    }
-    //if (RotateLeftBtn) RotateLeftBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateLeft);
-    //if (RotateRightBtn) RotateRightBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleRotateRight);
-    
-    if (BackBtn) BackBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleBackClicked);
-    if (NextBtn) NextBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleNextClicked);
+    if (PreviewActor) PreviewActor->UpdatePreview(CurrentData);
+}
 
-    // Sākotnējā pogas stāvokļa pārbaude
-    if (NextBtn) NextBtn->SetIsEnabled(false);
+void UCharacterAppearanceWidget::HandleWeightChanged(float Value)
+{
+    // 1. Aprēķinām mērogu priekš 3D tēla (lai resnums mainītos vizuāli)
+    // 0.0 = 0.85 (tievs), 1.0 = 1.15 (resns)
+    float MinScale = 0.85f;
+    float MaxScale = 1.15f;
+    CurrentData.WeightScale = FMath::Lerp(MinScale, MaxScale, Value);
+
+    // 2. Aprēķinām Svaru priekš UI (lai rādītu kg)
+    // 0.0 = 50kg, 1.0 = 110kg
+    float MinKg = 50.0f;
+    float MaxKg = 110.0f;
+    float DisplayWeight = FMath::Lerp(MinKg, MaxKg, Value);
+
+    // 3. Nosūtam skaitli uz tavu slaideri
+    if (WeightSlider)
+    {
+        WeightSlider->SetValueUI(DisplayWeight);
+    }
+
+    if (PreviewActor) PreviewActor->UpdatePreview(CurrentData);
+}
+
+void UCharacterAppearanceWidget::HandleGenderChanged(bool bIsChecked)
+{
+    // Checkbox TRUE = Sieviete, FALSE = Vīrietis
+    CurrentData.bIsMale = !bIsChecked;
+
+    if (PreviewActor) PreviewActor->UpdatePreview(CurrentData);
 }
 
 void UCharacterAppearanceWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-
-    if (CachedPreviewActor)
+    if (PreviewActor)
     {
-        if (bIsRotatingLeft)
-        {
-            CachedPreviewActor->AddActorLocalRotation(FRotator(0, -RotationSpeed * InDeltaTime, 0));
-        }
-        if (bIsRotatingRight)
-        {
-            CachedPreviewActor->AddActorLocalRotation(FRotator(0, RotationSpeed * InDeltaTime, 0));
-        }
+        if (bIsRotatingLeft) PreviewActor->AddActorLocalRotation(FRotator(0, -RotationSpeed * InDeltaTime, 0));
+        if (bIsRotatingRight) PreviewActor->AddActorLocalRotation(FRotator(0, RotationSpeed * InDeltaTime, 0));
     }
 }
 
@@ -94,9 +132,7 @@ void UCharacterAppearanceWidget::FindPreviewActor()
     }
     else
     {
-        // Ja atrasts, saglabājam kešā un ielādējam sākotnējos datus
-        CachedPreviewActor = PreviewActor;
-        CachedPreviewActor->UpdatePreview(CurrentData);
+        PreviewActor->UpdatePreview(CurrentData);
     }
 }
 
@@ -107,38 +143,6 @@ void UCharacterAppearanceWidget::HandleNameChanged(const FText& Text)
     CurrentData.PlayerName = Text.ToString();
     UpdateNextButtonState();
 }
-void UCharacterAppearanceWidget::HandleGenderChanged(bool bIsChecked)
-{
-    // Tavā struktūrā ir bIsMale. Ja Checkbox ir ieķeksēts, pieņemsim, ka tā ir sieviete.
-    CurrentData.bIsMale = !bIsChecked; 
-    
-    if (CachedPreviewActor)
-    {
-        CachedPreviewActor->UpdatePreview(CurrentData);
-    }
-}
-
-void UCharacterAppearanceWidget::HandleHeightChanged(float Value)
-{
-    CurrentData.HeightScale = Value; // Saglabājam datus struktūrā
-    
-    if (CachedPreviewActor)
-    {
-        // Sūtam visu struktūru, lai aktieris pārrēķina Z mērogu
-        CachedPreviewActor->UpdatePreview(CurrentData);
-    }
-}
-
-void UCharacterAppearanceWidget::HandleWeightChanged(float Value)
-{
-    CurrentData.WeightScale = Value; // Saglabājam datus struktūrā
-    
-    if (CachedPreviewActor)
-    {
-        // Sūtam visu struktūru, lai aktieris pārrēķina X/Y mērogu
-        CachedPreviewActor->UpdatePreview(CurrentData);
-    }
-}
 
 void UCharacterAppearanceWidget::HandleBackClicked()
 {
@@ -147,7 +151,6 @@ void UCharacterAppearanceWidget::HandleBackClicked()
     {
         GI->AsyncLoadGameLevel(FName("L_MainMenu"));
     }
-    //UGameplayStatics::OpenLevel(this, FName("/Game/ManaSpele/Levels/L_MainMenu"));
 }
 void UCharacterAppearanceWidget::UpdateNextButtonState()
 {
@@ -176,4 +179,38 @@ void UCharacterAppearanceWidget::HandleNextClicked()
     {
         UE_LOG(LogTemp, Warning, TEXT("APPEARANCE: No one is listening to OnNextStepRequested!"));
     }
+}
+void UCharacterAppearanceWidget::BindButtons()
+{
+    // 1. Ievade
+    if (NameInput) NameInput->OnTextChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleNameChanged);
+    
+    // 2. Dropdown (Gender)
+    if (GenderCheckBox) GenderCheckBox->OnCheckStateChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleGenderChanged);
+    
+    // 3. Slider (Height) - Izmantojam tavu OnValueChanged delegātu
+    if (HeightSlider) HeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleHeightChanged);
+
+    // 4. Slider (Weight) - Izmantojam tavu OnValueChanged delegātu
+    if (WeightSlider) WeightSlider->OnValueChanged.AddDynamic(this, &UCharacterAppearanceWidget::HandleWeightChanged);
+    
+    // 5. Pogas - Izmanto savu pogu delegātu (piem. OnClicked)
+    // SVARĪGI: Izmantojam OnPressed un OnReleased gludai rotācijai
+    if (RotateLeftBtn)
+    {
+        RotateLeftBtn->OnPressed.AddDynamic(this, &UCharacterAppearanceWidget::StartRotateLeft);
+        RotateLeftBtn->OnReleased.AddDynamic(this, &UCharacterAppearanceWidget::StopRotateLeft);
+    }
+
+    if (RotateRightBtn)
+    {
+        RotateRightBtn->OnPressed.AddDynamic(this, &UCharacterAppearanceWidget::StartRotateRight);
+        RotateRightBtn->OnReleased.AddDynamic(this, &UCharacterAppearanceWidget::StopRotateRight);
+    }
+    
+    if (BackBtn) BackBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleBackClicked);
+    if (NextBtn) NextBtn->OnClicked.AddDynamic(this, &UCharacterAppearanceWidget::HandleNextClicked);
+
+    // Sākotnējā pogas stāvokļa pārbaude
+    if (NextBtn) NextBtn->SetIsEnabled(false);
 }

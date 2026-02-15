@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/Structs/FCharacterCustomizationData.h"
-//#include "UI/Menus/NewGame/CreationParts/CharacterActor/ACharacterSetupActor.h"
 #include "UI/Base/MenuButton/MenuButtonWidget.h" // Tavs Button include
 #include "UI/Base/MenuSlider/MenuSliderWidget.h" // Tavs Slider include
 #include "UI/Base/MenuEditableText/UMenuEditableTextWidget.h"
@@ -12,10 +11,8 @@
 
 class UMenuCheckBoxWidget;
 class UMenuEditableTextWidget;
-// ŠIS IR "FORWARD DECLARATION" - Mēs apsolām, ka šī klase eksistē
 class ACharacterSetupActor;
 
-// Definē delegātu faila augšā (pirms klases)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNextStepRequested);
 UCLASS()
 class SECONDCHANCE_API UCharacterAppearanceWidget : public UUserWidget
@@ -24,6 +21,7 @@ class SECONDCHANCE_API UCharacterAppearanceWidget : public UUserWidget
 
 protected:
 	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
 
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -55,16 +53,28 @@ protected:
 
 	// --- Labels priekš PreConstruct ---
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText GenderLabelText = FText::FromString("Gender");
+	FText GenderLabelText = FText::FromString("Gender:");
 
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText HeightLabelText = FText::FromString("Height");
+	FText HeightLabelText = FText::FromString("Height:");
 
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText NameLabelText = FText::FromString("Name");
+	FText NameLabelText = FText::FromString("Name:");
 
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText WeightLabelText = FText::FromString("Weight");
+	FText WeightLabelText = FText::FromString("Weight:");
+
+	UPROPERTY(EditAnywhere, Category = "UI|Buttons")
+	FText BackBtnLabelText = FText::FromString("Back");
+
+	UPROPERTY(EditAnywhere, Category = "UI|Buttons")
+	FText NextBtnLabelText = FText::FromString("Next");
+
+	UPROPERTY(EditAnywhere, Category = "UI|Buttons")
+	FText RotateLeftBtnLabelText = FText::FromString("<");
+
+	UPROPERTY(EditAnywhere, Category = "UI|Buttons")
+	FText RotateRightBtnLabelText = FText::FromString(">");
 
 	// --- Parametri ---
 	UPROPERTY(EditAnywhere, Category = "Appearance|Rotation")
@@ -76,14 +86,9 @@ protected:
 	UPROPERTY()
 	ACharacterSetupActor* PreviewActor;
 
-	ACharacterSetupActor* CachedPreviewActor;
-
 	// --- Rotācijas stāvoklis ---
 	bool bIsRotatingLeft = false;
 	bool bIsRotatingRight = false;
-	
-	// Mainīgie loģikai
-	bool bIsFemaleSelected = false;
 
 	// --- Handleri ---
 	UFUNCTION() void HandleNameChanged(const FText& Text);
@@ -102,6 +107,7 @@ protected:
 private:
 	void FindPreviewActor();// Palīgfunkcija
 	void UpdateNextButtonState(); // Validācija
+	void BindButtons();
 public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")

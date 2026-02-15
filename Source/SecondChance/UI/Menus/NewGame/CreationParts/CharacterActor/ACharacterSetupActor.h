@@ -15,6 +15,16 @@ class SECONDCHANCE_API ACharacterSetupActor : public AActor
 public:    
 	ACharacterSetupActor();
 
+	// Šis būs tavs "Mesh", ko redzēsi Blueprintā
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* CharacterMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Customization")
+	USkeletalMesh* MaleMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Customization")
+	USkeletalMesh* FemaleMesh;
+	
 	// Galvenais modelis (Kapsula vai Mesh)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visuals")
 	UStaticMeshComponent* PreviewMesh;

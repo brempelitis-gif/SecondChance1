@@ -3,33 +3,34 @@
 
 ACharacterSetupActor::ACharacterSetupActor()
 {
+    // Izveidojam Mesh komponenti
+    CharacterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh"));
+    RootComponent = CharacterMesh; // Padarām to par galveno
+
+    // Šis neļauj tam nokrist cauri zemei, ja ir fizika (pēc izvēles)
+    // CharacterMesh->SetCollisionProfileName(TEXT("NoCollision"));
+    
     PrimaryActorTick.bCanEverTick = false; // Mums nevajag Tick, lai ietaupītu resursus
     
-    PreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PreviewMesh"));
-    RootComponent = PreviewMesh;
+   // PreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PreviewMesh"));
+   //RootComponent = PreviewMesh;
 }
 
-void ACharacterSetupActor::UpdatePreview(const FCharacterCustomizationData& CurrentData)
+void ACharacterSetupActor::UpdatePreview(const FCharacterCustomizationData& Data)
 {
-    // 1. DZIMUMS: Pārslēdzam materiālu
-    UpdateGenderVisuals(CurrentData.bIsMale);
+    if (!CharacterMesh) return;
 
-    // 2. AUGUMS (Z ass): Aprēķinām mērogu
-    // Vīriešiem (bIsMale=true) skala 1.0 - 1.2
-    // Sievietēm (bIsMale=false) skala 0.9 - 1.1
-    float MinH = CurrentData.bIsMale ? 1.0f : 0.9f;
-    float MaxH = CurrentData.bIsMale ? 1.2f : 1.1f;
-    float NewScaleZ = FMath::Lerp(MinH, MaxH, CurrentData.HeightScale);
+    // 1. Dzimuma maiņa
+    USkeletalMesh* TargetMesh = Data.bIsMale ? MaleMesh : FemaleMesh;
+    if (TargetMesh && CharacterMesh->GetSkeletalMeshAsset() != TargetMesh)
+    {
+        CharacterMesh->SetSkeletalMesh(TargetMesh);
+    }
 
-    // 3. SVARS (X un Y asis): Padarām tēlu platāku vai šaurāku
-    // 0.8 ir ļoti tievs, 1.3 ir dūšīgs
-    float NewScaleXY = FMath::Lerp(0.8f, 1.3f, CurrentData.WeightScale);
-
-    // Uzstādām jauno izmēru visām asīm uzreiz
-    SetActorScale3D(FVector(NewScaleXY, NewScaleXY, NewScaleZ));
-
-    // 4. KRĀSA: Nosūtām krāsu uz materiālu
-    UpdateSkinColor(CurrentData.SkinColor);
+    // 2. Augums un Svars (Scale)
+    // Atceries: X un Y ir platums (Weight), Z ir augstums (Height)
+    FVector NewScale = FVector(Data.WeightScale, Data.WeightScale, Data.HeightScale);
+    CharacterMesh->SetRelativeScale3D(NewScale);
 }
 
 void ACharacterSetupActor::UpdateGenderVisuals(bool bIsMale)
