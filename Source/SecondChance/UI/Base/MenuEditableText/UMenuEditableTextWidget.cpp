@@ -2,12 +2,6 @@
 #include "Components/TextBlock.h"
 #include "Components/EditableText.h"
 
-void UMenuEditableTextWidget::NativePreConstruct()
-{
-	Super::NativePreConstruct();
-	if (LabelText) LabelText->SetText(LabelValue);
-}
-
 void UMenuEditableTextWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -16,8 +10,6 @@ void UMenuEditableTextWidget::NativeOnInitialized()
 		EditableInput->OnTextChanged.AddDynamic(this, &UMenuEditableTextWidget::HandleOnTextChanged);
 	}
 }
-
-void UMenuEditableTextWidget::SetLabel(FText InText) { if (LabelText) LabelText->SetText(InText); }
 
 void UMenuEditableTextWidget::SetText(FText InText) { if (EditableInput) EditableInput->SetText(InText); }
 

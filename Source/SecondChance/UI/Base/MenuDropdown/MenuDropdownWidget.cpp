@@ -1,15 +1,24 @@
 #include "MenuDropdownWidget.h"
 #include "Components/ComboBoxString.h"
-#include "Components/TextBlock.h"
 
 void UMenuDropdownWidget::NativePreConstruct()
 {
+	// 1. Šis izpildīs UBaseLabeledWidget loģiku (uzliks LabelText no LabelDefaultValue)
 	Super::NativePreConstruct();
 
-	// Apply designer label so it shows in UMG Designer and at runtime if present.
-	if (Label)
+	// 2. Aizpildām ComboBox ar opcijām no Designer loga (ja tādas ir)
+	if (ComboBox && DesignerOptions.Num() > 0)
 	{
-		Label->SetText(DesignerLabel);
+		ComboBox->ClearOptions();
+		for (const FString& Option : DesignerOptions)
+		{
+			ComboBox->AddOption(Option);
+		}
+		// Uzstādām pirmo kā noklusējumu, ja nekas nav izvēlēts
+		if (ComboBox->GetSelectedIndex() == -1)
+		{
+			ComboBox->SetSelectedIndex(0);
+		}
 	}
 }
 
@@ -19,41 +28,9 @@ void UMenuDropdownWidget::NativeOnInitialized()
 
 	if (ComboBox)
 	{
-		ComboBox->OnSelectionChanged.AddDynamic(
-			this, &UMenuDropdownWidget::HandleSelectionChanged
-		);
+		ComboBox->OnSelectionChanged.AddDynamic(this, &UMenuDropdownWidget::HandleSelectionChanged);
 	}
 }
-
-
-
-
-void UMenuDropdownWidget::ClearOptions()
-{
-	if (ComboBox)
-	{
-		ComboBox->ClearOptions();
-		CachedOptions.Empty();
-	}
-}
-void UMenuDropdownWidget::AddOption(const FString& Option) const
-{
-	if (ComboBox) ComboBox->AddOption(Option);
-}
-int32 UMenuDropdownWidget::GetSelectedIndex() const
-{
-	return ComboBox ? ComboBox->GetSelectedIndex() : -1;
-}
-
-
-
-
-void UMenuDropdownWidget::SetSelectedIndex(int32 Index)
-{
-	if (ComboBox) ComboBox->SetSelectedIndex(Index);
-}
-
-
 
 void UMenuDropdownWidget::SetOptions(const TArray<FString>& InOptions)
 {
@@ -73,23 +50,31 @@ void UMenuDropdownWidget::SetOptions(const TArray<FString>& InOptions)
 	}
 }
 
-
-
-void UMenuDropdownWidget::SetLabel(const FText& InText)
+int32 UMenuDropdownWidget::GetSelectedIndex() const
 {
-	if (Label)
-	{
-		Label->SetText(InText);
-	}
+	return ComboBox ? ComboBox->GetSelectedIndex() : -1;
 }
+
+void UMenuDropdownWidget::SetSelectedIndex(int32 Index)
+{
+	if (ComboBox) ComboBox->SetSelectedIndex(Index);
+}
+
 void UMenuDropdownWidget::HandleSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	// Pārsūtam notikumu tālāk uz GraphicsWidget
 	OnSelectionChanged.Broadcast(SelectedItem, SelectionType);
 }
 
+void UMenuDropdownWidget::ClearOptions()
+{
+	if (ComboBox)
+	{
+		ComboBox->ClearOptions();
+		CachedOptions.Empty();
+	}
+}
 
-
-
-
-
+void UMenuDropdownWidget::AddOption(const FString& Option) const
+{
+	if (ComboBox) ComboBox->AddOption(Option);
+}

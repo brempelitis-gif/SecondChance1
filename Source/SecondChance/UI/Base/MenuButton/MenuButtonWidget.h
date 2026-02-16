@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueprint/UserWidget.h"
+//#include "Blueprint/UserWidget.h"
+#include "UI/Base/UBaseLabeledWidget.h"
 #include "MenuButtonWidget.generated.h"
 
 class UButton;
@@ -15,7 +16,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMenuButtonReleased);
  * Base class for all menu buttons (Apply, Cancel, Play, etc.)
  */
 UCLASS(Abstract, BlueprintType)
-class SECONDCHANCE_API UMenuButtonWidget : public UUserWidget
+class SECONDCHANCE_API UMenuButtonWidget : public UBaseLabeledWidget
 {
 	GENERATED_BODY()
 
@@ -41,9 +42,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category="MenuButton")
 	void SetEnabled(bool bEnabled);
 
-	UFUNCTION(BlueprintCallable, Category="MenuButton")
-	void SetLabel(const FText& InText);
-
 protected:
 	// Skaņas, ko varēsi iestatīt Blueprintā
 	UPROPERTY(EditAnywhere, Category = "Audio")
@@ -63,9 +61,6 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* Button;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* LabelText;
 
 private:
 	// Iekšējie handleri, kas "pārsūta" signālus

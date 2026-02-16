@@ -1,21 +1,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "UI/Base/UBaseLabeledWidget.h"
 #include "Components/CheckBox.h"
-#include "Components/TextBlock.h"
 #include "MenuCheckBoxWidget.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCheckBoxValueChanged, bool, bIsChecked);
 
 UCLASS()
-class SECONDCHANCE_API UMenuCheckBoxWidget : public UUserWidget
+class SECONDCHANCE_API UMenuCheckBoxWidget : public UBaseLabeledWidget
 {
 	GENERATED_BODY()
 
 public:
-	// Uzstāda tekstu blakus checkboxam
-	void SetLabel(FText InText);
 
 	// Uzstāda un iegūst stāvokli
 	void SetIsChecked(bool bInIsChecked);
@@ -25,11 +22,7 @@ public:
 	FOnCheckBoxValueChanged OnCheckStateChanged;
 
 protected:
-	virtual void NativePreConstruct() override;
 	virtual void NativeOnInitialized() override;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* LabelText;
 
 	UPROPERTY(meta = (BindWidget))
 	UCheckBox* InternalCheckBox;

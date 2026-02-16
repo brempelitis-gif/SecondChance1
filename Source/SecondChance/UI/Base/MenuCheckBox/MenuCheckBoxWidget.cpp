@@ -1,11 +1,5 @@
 #include "UI/Base/MenuCheckBox/MenuCheckBoxWidget.h"
 
-void UMenuCheckBoxWidget::NativePreConstruct()
-{
-	Super::NativePreConstruct();
-	if (LabelText) LabelText->SetText(Label);
-}
-
 void UMenuCheckBoxWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -13,12 +7,6 @@ void UMenuCheckBoxWidget::NativeOnInitialized()
 	{
 		InternalCheckBox->OnCheckStateChanged.AddDynamic(this, &UMenuCheckBoxWidget::HandleInternalCheckStateChanged);
 	}
-}
-
-void UMenuCheckBoxWidget::SetLabel(FText InText)
-{
-	Label = InText;
-	if (LabelText) LabelText->SetText(Label);
 }
 
 void UMenuCheckBoxWidget::SetIsChecked(bool bInIsChecked)

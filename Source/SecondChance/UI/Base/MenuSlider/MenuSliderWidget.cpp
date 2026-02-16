@@ -5,14 +5,6 @@
 #include "Components/Slider.h"
 #include "Components/TextBlock.h"
 
-void UMenuSliderWidget::SetLabel(const FText& InText)
-{
-	if (LabelText)
-	{
-		LabelText->SetText(InText);
-	}
-}
-
 void UMenuSliderWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();

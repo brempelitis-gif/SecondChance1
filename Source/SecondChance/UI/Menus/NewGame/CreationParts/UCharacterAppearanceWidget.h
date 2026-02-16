@@ -31,7 +31,7 @@ protected:
 	UMenuEditableTextWidget* NameInput;
 
 	UPROPERTY(meta = (BindWidget))
-	UMenuCheckBoxWidget* GenderCheckBox; // Pārvērtām no Dropdown uz CheckBox vienkāršībai True = Female, False = Male
+	UMenuCheckBoxWidget* GenderCheckBox; // CheckBox vienkāršībai True = Female, False = Male
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuSliderWidget* HeightSlider;

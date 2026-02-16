@@ -66,11 +66,3 @@ void UMenuButtonWidget::SetEnabled(bool bEnabled)
 	}
 }
 
-void UMenuButtonWidget::SetLabel(const FText& InText)
-{
-	if (LabelText)
-	{
-		LabelText->SetText(InText);
-	}
-}
-
