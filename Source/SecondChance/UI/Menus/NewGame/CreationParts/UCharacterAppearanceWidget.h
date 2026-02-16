@@ -53,16 +53,16 @@ protected:
 
 	// --- Labels priekš PreConstruct ---
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText GenderLabelText = FText::FromString("Gender:");
+	FText GenderLabelText = FText::FromString("Gender :");
 
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText HeightLabelText = FText::FromString("Height:");
+	FText HeightLabelText = FText::FromString("Height :");
 
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText NameLabelText = FText::FromString("Name:");
+	FText NameLabelText = FText::FromString("Name :");
 
 	UPROPERTY(EditAnywhere, Category = "Appearance Labels")
-	FText WeightLabelText = FText::FromString("Weight:");
+	FText WeightLabelText = FText::FromString("Weight :");
 
 	UPROPERTY(EditAnywhere, Category = "UI|Buttons")
 	FText BackBtnLabelText = FText::FromString("Back");

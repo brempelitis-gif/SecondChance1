@@ -19,6 +19,18 @@ class SECONDCHANCE_API UMenuSliderWidget : public UUIBaseWidget
 	GENERATED_BODY()
 
 public:
+	// --- KONFIGURĀCIJA ---
+
+	// Ja TRUE (noklusējums): Reizina vērtību ar 100 (piem. 0.5 -> 50). Der Audio/Settings.
+	// Ja FALSE: Rāda vērtību kā ir (piem. 180 -> 180). Der Character Creator.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slider Settings")
+	bool bIsPercentage = true;
+
+	// Ja TRUE (noklusējums): Slaideris pats nomaina tekstu uzreiz, kad to bīda (0-1 robežās).
+	// Ja FALSE: Slaideris tekstu nemaina. To dara tavs ārējais kods (CharacterAppearanceWidget).
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slider Settings")
+	bool bAutoUpdateText = true;
+	
 	UFUNCTION(BlueprintCallable)
 	void SetValue(float InValue);
 	void SetValueUI(float InValue);

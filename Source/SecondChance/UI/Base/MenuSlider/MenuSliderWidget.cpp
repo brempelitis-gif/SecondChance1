@@ -16,24 +16,27 @@ void UMenuSliderWidget::SetLabel(const FText& InText)
 void UMenuSliderWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
-	if (Slider)
-	{
-		Slider->OnValueChanged.AddDynamic(
-			this, &UMenuSliderWidget::HandleSliderChanged
-		);
-	}
-	Value->SetVisibility(ESlateVisibility::HitTestInvisible);
+	
+	if (Slider) Slider->OnValueChanged.AddDynamic(this, &UMenuSliderWidget::HandleSliderChanged);
+    
+	if (Value) Value->SetVisibility(ESlateVisibility::HitTestInvisible);
 }
 
 void UMenuSliderWidget::HandleSliderChanged(float InValue)
 {
+	// 1. Paziņojam citiem (CharacterAppearanceWidget), ka vērtība mainījās
 	OnValueChanged.Broadcast(InValue);
-	SetValueUI(InValue);
+
+	// 2. Mainām tekstu TIKAI tad, ja ir ieslēgts "Auto Update"
+	// Audio settingiem šis būs TRUE (rādīs 0-100%)
+	// Character Creatoram šis būs FALSE (jo tur mēs paši rēķinām cm un kg)
+	if (bAutoUpdateText)
+	{
+		SetValueUI(InValue);
+	}
 }
 void UMenuSliderWidget::SetValue(float InValue)
 {
-	// Nodrošinām, ka vērtība ir diapazonā 0-1
 	float ClampedValue = FMath::Clamp(InValue, 0.f, 1.f);
 
 	if (Slider)
@@ -41,18 +44,31 @@ void UMenuSliderWidget::SetValue(float InValue)
 		Slider->SetValue(ClampedValue);
 	}
     
-	// Obligāti atjaunojam teksta procentu (piem. 50%)
-	SetValueUI(ClampedValue);
+	// Ja mēs uzstādām vērtību no koda, mēs parasti gribam atjaunot arī tekstu
+	// Bet, ja bAutoUpdateText ir false, mums jāuzmanās, lai nepārrakstītu cm ar %
+	if (bAutoUpdateText)
+	{
+		SetValueUI(ClampedValue);
+	}
 }
 void UMenuSliderWidget::SetValueUI(float InValue)
 {
-	if (Value)
+	if (!Value) return;
+
+	float FinalValue = InValue;
+
+	// Ja šis ir procentu slaideris (Audio), reizinām ar 100
+	// Ja šis ir augums (Character), mēs jau padodam 180, tāpēc nevajag reizināt
+	if (bIsPercentage)
 	{
-		int i = static_cast<int>(InValue * 100);
-		FString myString = FString::FromInt(i);// build your string however
-		FText t = FText::FromString(myString);
-		Value->SetText(t);
+		FinalValue = InValue * 100.0f;
 	}
+
+	// Noapaļojam uz veselu skaitli
+	int32 IntValue = FMath::RoundToInt(FinalValue);
+    
+	FString MyString = FString::FromInt(IntValue);
+	Value->SetText(FText::FromString(MyString));
 }
 
 float UMenuSliderWidget::GetValue() const
