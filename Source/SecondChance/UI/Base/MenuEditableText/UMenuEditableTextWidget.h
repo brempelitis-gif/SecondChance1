@@ -2,7 +2,6 @@
 
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
 #include "UI/Base/UBaseLabeledWidget.h"
 #include "UMenuEditableTextWidget.generated.h"
 

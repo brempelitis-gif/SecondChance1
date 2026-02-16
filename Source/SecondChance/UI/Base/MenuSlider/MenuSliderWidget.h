@@ -1,12 +1,9 @@
 #pragma once
 #include "Components/EditableTextBox.h"
 #include "UI/Base/UBaseLabeledWidget.h"
-#include "UI/Base/UIBaseWidget.h"
 #include "MenuSliderWidget.generated.h"
 
-class UTextBox;
 class USlider;
-class UTextBlock;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 	FOnMenuSliderValueChanged,
@@ -41,9 +38,6 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnMenuSliderValueChanged OnValueChanged;
-	
-	//UFUNCTION(BlueprintCallable, Category="Label")
-	//void SetLabel(const FText& InText);
 protected:
 	virtual void NativeOnInitialized() override;
 
@@ -52,9 +46,6 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	USlider* Slider;
-
-//	UPROPERTY(meta = (BindWidget))
-//	UTextBlock* LabelText;
 
 	UPROPERTY(meta = (BindWidget))
 	UEditableTextBox* Value;

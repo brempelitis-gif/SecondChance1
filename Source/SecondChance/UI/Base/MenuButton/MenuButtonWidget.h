@@ -1,11 +1,10 @@
 #pragma once
 
-//#include "Blueprint/UserWidget.h"
 #include "UI/Base/UBaseLabeledWidget.h"
 #include "MenuButtonWidget.generated.h"
 
 class UButton;
-class UTextBlock;
+//class UTextBlock;
 
 // Definējam delegātus nospiešanai un atlaišanai
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMenuButtonClicked);
