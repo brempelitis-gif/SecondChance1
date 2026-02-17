@@ -1,10 +1,12 @@
 #pragma once
 
+#include "CoreMinimal.h"
 #include "UI/Base/UIBaseWidget.h"
 #include "Core/Enums/ESettingsCategory.h"
-#include "Core/Subsystems/UIManagerSubsystem.h"
-#include "UI/Menus/Options//UIOptionsMenuBase.h" // Izmanto jauno headeri
 #include "OptionsCategoryBaseWidget.generated.h"
+
+class UUIManagerSubsystem;
+class UOptionsBaseWidget; // Forward declaration uz jauno bāzi
 
 UCLASS(Abstract)
 class SECONDCHANCE_API UOptionsCategoryBaseWidget : public UUIBaseWidget
@@ -28,8 +30,7 @@ protected:
 	UFUNCTION(BlueprintPure, Category="Options")
 	bool IsPending() const;
 
-	/** Ērts access uz UIManager */
+	/** Kešota norāde uz UIManager */
 	UPROPERTY()
 	UUIManagerSubsystem* UIManager = nullptr;
 };
-

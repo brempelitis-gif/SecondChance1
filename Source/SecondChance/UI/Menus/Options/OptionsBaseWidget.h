@@ -1,117 +1,96 @@
+
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/Base/UIBaseWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "Core/Enums/ESettingsCategory.h"
-#include "Core/Subsystems/UIManagerSubsystem.h"
-#include "UI/Settings/AudioOptionType.h"
+#include "Core/Subsystems/AudioManagerSubsystem.h" // Iekļaujam, lai zinātu Enum un Struct
 #include "OptionsBaseWidget.generated.h"
 
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSettingsChanged, ESettingsCategory, Category);
+// Forward Declarations (lai paātrinātu kompilāciju)
+class UUIManagerSubsystem;
+class UAudioManagerSubsystem;
+class UMenuButtonWidget;
+class UWidgetSwitcher;
 
 UCLASS()
-class SECONDCHANCE_API UOptionsBaseWidget : public UUIBaseWidget
+class SECONDCHANCE_API UOptionsBaseWidget : public UUserWidget
 {
     GENERATED_BODY()
 
-
 public:
-	//virtual void NativeOnInitialized() override;
-	//virtual void NativeDestruct() override;
-	
-    UPROPERTY(BlueprintAssignable, Category = "Settings")
-    FOnSettingsChanged OnSettingsChanged;
-
-    /** Audio Iestatījumi */
-    UFUNCTION(BlueprintCallable, Category="Settings|Audio")
-    void SetAudioOption(EAudioOption Option, float Value);
-
-    UFUNCTION(BlueprintCallable, Category="Settings|Audio")
-    void ApplyAudioSettings();
-
-    UFUNCTION(BlueprintCallable, Category="Settings|Audio")
-    void CancelAudioSettings();
-
-    /** Grafikas Iestatījumi */
-    UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
-    void ApplyGraphicsSettings();
-
-    UFUNCTION(BlueprintCallable, Category="Settings|Graphics")
-    void CancelGraphicsSettings();
-
-    /** Pending sistēma */
-    UFUNCTION(BlueprintPure, Category="UI|Options")
-    bool IsCategoryPending(ESettingsCategory Category) const;
-
-    UFUNCTION(BlueprintCallable, Category="Settings")
-    void ApplyPendingSettings();
-
-    UFUNCTION(BlueprintCallable, Category="Settings")
-    void CancelPendingSettings();
-
-    // Getter vērtības priekš Refresh funkcijām kategorijās
-    float GetPendingMasterVolume() const { return PendingMasterVolume; }
-    float GetPendingMusicVolume() const { return PendingMusicVolume; }
-    float GetPendingSFXVolume() const { return PendingSFXVolume; }
-
-protected:
+    // --- Lifecycle ---
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
 
-	static inline const FString AudioSettingsSlot = TEXT("AudioSettings");
-	static constexpr int32 AudioSettingsUserIndex = 0;
-	
-    void LoadAudioSettings();
-    void SaveAudioSettings() const;
-    void SetMasterVolume(float Value) const;
-    void SetMusicVolume(float Value) const;
-    void SetSFXVolume(float Value) const;
-public:
-    void MarkCategoryPending(ESettingsCategory Category);
-    void ClearCategoryPending(ESettingsCategory Category);
+    // --- Audio Control (Called from UI Sliders) ---
+    UFUNCTION(BlueprintCallable, Category = "Options | Audio")
+    void SetAudioOption(EAudioOption Option, float Value);
 
-private:
-    float CurrentMasterVolume = 1.f;
-    float CurrentMusicVolume = 1.f;
-    float CurrentSFXVolume = 1.f;
+    // --- Graphics Control (Called from UI Dropdowns) ---
+    UFUNCTION(BlueprintCallable, Category = "Options | Graphics")
+    void ApplyGraphicsResolution(FIntPoint Resolution);
 
-    float PendingMasterVolume = 1.f;
-    float PendingMusicVolume = 1.f;
-    float PendingSFXVolume = 1.f;
+    // --- Main Button Handlers ---
+    UFUNCTION(BlueprintCallable, Category = "Options | Actions")
+    void HandleApplyClicked();
 
-    UPROPERTY()
-    TSet<ESettingsCategory> PendingCategories;
+    UFUNCTION(BlueprintCallable, Category = "Options | Actions")
+    void HandleCancelClicked();
 
-//man sis jau bija
+    UFUNCTION(BlueprintCallable, Category = "Options | Actions")
+    void HandleBackClicked();
+
+	// Pievieno šo rindiņu pie publiskajām funkcijām
+	UFUNCTION(BlueprintPure, Category = "Options | State")
+	bool IsCategoryPending(ESettingsCategory Category) const;
+
+	// Tev obligāti vajag šo rindiņu, citādi bērni to neatradīs!
+	UPROPERTY(BlueprintAssignable, Category = "Options | Events")
+	FOnSettingsChanged OnSettingsChanged;
 
 protected:
+    // --- Events for Blueprint ---
+    
+    // Šo implementē Blueprintā: Saņem datus un uzstāda slaideru vērtības
+    // (Izsauc pie Construct un pie Cancel)
+    UFUNCTION(BlueprintImplementableEvent, Category = "Options | UI Updates")
+    void UpdateAudioSliders(const FAudioSettingsData& AudioData);
 
-	// =========================
-	// UI Manager
-	// =========================
-	UPROPERTY()
-	UUIManagerSubsystem* UIManager = nullptr;
+    // --- Subsystem Cache (Optimization) ---
+    UPROPERTY()
+    UUIManagerSubsystem* UIManager;
 
-	// =========================
-	// Category
-	// =========================
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Options")
-	ESettingsCategory Category = ESettingsCategory::None;
+    UPROPERTY()
+    UAudioManagerSubsystem* AudioManager;
 
-	// =========================
-	// Buttons (common)
-	// =========================
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UMenuButtonWidget* ApplyButton;
+    // --- Internal State ---
+    UPROPERTY(BlueprintReadOnly, Category = "Options | State")
+    TSet<ESettingsCategory> PendingCategories;
 
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UMenuButtonWidget* CancelButton;
+    // --- Helper Functions ---
+    void MarkCategoryPending(ESettingsCategory Category);
+    void ClearCategoryPending(ESettingsCategory Category);
+    void UpdateActionButtonsVisibility(); // Rāda/Slēpj Apply pogu
 
-	// =========================
-	// Button handlers
-	// =========================
-//	UFUNCTION()
-//	void HandleApplyClicked();
+    // --- Internal Apply/Cancel Logic ---
+    void ApplyAudioChanges();
+    void CancelAudioChanges();
 
-//	UFUNCTION()
-//	void HandleCancelClicked();
+    void ApplyGraphicsChanges();
+    void CancelGraphicsChanges(); // Reverts resolution/window mode
+    
+    // Callbacks for Confirmation Popup
+    UFUNCTION()
+    void OnGraphicsConfirmed();
+    
+    UFUNCTION()
+    void OnGraphicsReverted();
+
+    // --- UI Elements (Optional, if you bind in C++) ---
+    UPROPERTY(meta = (BindWidgetOptional))
+    UMenuButtonWidget* ApplyButton;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    UMenuButtonWidget* CancelButton;
 };

@@ -1,88 +1,111 @@
+
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "MyGameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Core/Subsystems/UIConfig.h" 
+#include "UI/Base/ConfirmationPopUp/UIConfirmationPopup.h"
 
 void UUIManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	Super::Initialize(Collection);
-	if (!UIConfig)
-	{
-		if (UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance()))
-		{
-			UIConfig = GI->UIConfig;
-		}
-	}
+    Super::Initialize(Collection);
+
+    // Mēģinām atrast UIConfig caur GameInstance, ja tas nav iestatīts defaultos
+    if (!UIConfig)
+    {
+        if (UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance()))
+        {
+            UIConfig = GI->UIConfig;
+        }
+    }
 }
+
 UUIConfirmationPopup* UUIManagerSubsystem::PushConfirmationPopup(FText CategoryName, float Timeout)
 {
-	if (!UIConfig || !UIConfig->ConfirmationPopupClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UIManager: ConfirmationPopupClass nav iestatīta UIConfigā!"));
-		return nullptr;
-	}
+    if (!UIConfig || !UIConfig->ConfirmationPopupClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("UIManager: ConfirmationPopupClass nav iestatīta UIConfig!"));
+        return nullptr;
+    }
 
-	// 1. Izveidojam logrīku
-	UUIConfirmationPopup* Popup = CreateWidget<UUIConfirmationPopup>(GetWorld(), UIConfig->ConfirmationPopupClass);
-    
-	if (Popup)
-	{
-		// 2. Izmantojam tavu esošo Push loģiku!
-		// bShowCursor = true, bPauseGame = false (jo opciju menu jau parasti ir nopauzēts)
-		PushWidget(Popup, true, false);
-        
-		// 3. Inicializējam Pop-up datus
-		Popup->ShowPopup(CategoryName, Timeout);
-	}
+    UUIConfirmationPopup* Popup = CreateWidget<UUIConfirmationPopup>(GetWorld(), UIConfig->ConfirmationPopupClass);
+    if (Popup)
+    {
+        // Pievienojam stakam un parādām
+        PushWidget(Popup, true, false);
+        Popup->ShowPopup(CategoryName, Timeout);
+    }
 
-	return Popup;
+    return Popup;
 }
 
 void UUIManagerSubsystem::PushWidget(UUserWidget* NewWidget, bool bShowCursor, bool bPauseGame)
 {
-	if (!NewWidget) return;
-	NewWidget->AddToViewport();
-	WidgetStack.Push(NewWidget);
+    if (!NewWidget) return;
 
-	if (bPauseGame) UGameplayStatics::SetGamePaused(GetWorld(), true);
-	UpdateInputMode();
+    if (!NewWidget->IsInViewport())
+    {
+        NewWidget->AddToViewport();
+    }
+    
+    WidgetStack.Push(NewWidget);
+
+    if (bPauseGame) 
+    {
+        UGameplayStatics::SetGamePaused(GetWorld(), true);
+    }
+
+    UpdateInputMode();
 }
 
 void UUIManagerSubsystem::PopWidget()
 {
-	if (WidgetStack.Num() == 0) return;
-	UUserWidget* TopWidget = WidgetStack.Pop();
-	if (TopWidget) TopWidget->RemoveFromParent();
+    if (WidgetStack.Num() == 0) return;
 
-	if (WidgetStack.Num() == 0) UGameplayStatics::SetGamePaused(GetWorld(), false);
-	UpdateInputMode();
+    UUserWidget* TopWidget = WidgetStack.Pop();
+    if (TopWidget)
+    {
+        TopWidget->RemoveFromParent();
+    }
+
+    // Ja staks ir tukšs, atpauzējam spēli
+    if (WidgetStack.Num() == 0)
+    {
+        UGameplayStatics::SetGamePaused(GetWorld(), false);
+    }
+
+    UpdateInputMode();
 }
 
 void UUIManagerSubsystem::UpdateInputMode()
 {
-	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (!PC) return;
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) return;
 
-	if (WidgetStack.Num() > 0)
-	{
-		FInputModeUIOnly InputMode;
-		InputMode.SetWidgetToFocus(WidgetStack.Last()->TakeWidget());
-		PC->SetInputMode(InputMode);
-		PC->bShowMouseCursor = true;
-	}
-	else
-	{
-		PC->SetInputMode(FInputModeGameOnly());
-		PC->bShowMouseCursor = false;
-	}
+    if (WidgetStack.Num() > 0)
+    {
+        FInputModeUIOnly InputMode;
+        // Fokusējamies uz pēdējo pievienoto widgetu
+        InputMode.SetWidgetToFocus(WidgetStack.Last()->TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        
+        PC->SetInputMode(InputMode);
+        PC->bShowMouseCursor = true;
+    }
+    else
+    {
+        PC->SetInputMode(FInputModeGameOnly());
+        PC->bShowMouseCursor = false;
+    }
 }
 
 void UUIManagerSubsystem::ClearAllWidgets()
 {
-	for (UUserWidget* Widget : WidgetStack)
-	{
-		if (Widget) Widget->RemoveFromParent();
-	}
-	WidgetStack.Empty();
-	UpdateInputMode();
+    for (UUserWidget* Widget : WidgetStack)
+    {
+        if (Widget) Widget->RemoveFromParent();
+    }
+    WidgetStack.Empty();
+    UGameplayStatics::SetGamePaused(GetWorld(), false);
+    UpdateInputMode();
 }

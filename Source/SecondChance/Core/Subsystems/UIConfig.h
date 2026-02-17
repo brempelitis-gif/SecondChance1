@@ -38,13 +38,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Classes|Popups")
 	TSubclassOf<UUIConfirmationPopup> ConfirmationPopupClass;
 
-	UPROPERTY(EditDefaultsOnly, Category="Audio")
-	USoundClass* MasterSoundClass;
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TSoftObjectPtr<USoundClass> MasterSoundClass;
 
 	UPROPERTY(EditDefaultsOnly, Category="Audio")
-	USoundClass* MusicSoundClass;
+	TSoftObjectPtr<USoundClass> MusicSoundClass;
 
 	UPROPERTY(EditDefaultsOnly, Category="Audio")
-	USoundClass* SFXSoundClass;
-	
+	TSoftObjectPtr<USoundClass> SFXSoundClass;
 };

@@ -85,6 +85,13 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Options|Labels")
     FText CancelButtonLabel = FText::FromString("Cancel");
 
+    // Kešotā norāde uz UIManager
+    UPROPERTY()
+    UUIManagerSubsystem* UIManager;
+
+    // Palīgfunkcija, lai piekļūtu Config tieši (pēc izvēles)
+    class UUIConfig* GetUIConfig() const;
+    
 public:
     void SetAudioOption(EAudioOption Option, float Value);
     bool IsCategoryPending(ESettingsCategory Category) const;

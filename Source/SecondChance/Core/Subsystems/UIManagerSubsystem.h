@@ -1,9 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UIConfig.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "UIManagerSubsystem.generated.h"
+
+class UUIConfig;
+class UUserWidget;
+class UUIConfirmationPopup;
 
 UCLASS()
 class SECONDCHANCE_API UUIManagerSubsystem : public UGameInstanceSubsystem
@@ -11,20 +14,25 @@ class SECONDCHANCE_API UUIManagerSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI", meta=(AllowPrivateAccess="true"))
-	UUIConfig* UIConfig;
-
-	// Atgriež izveidoto logrīku, lai calleris (Options menu) varētu piesaistīt delegātus
-	UUIConfirmationPopup* PushConfirmationPopup(FText CategoryName, float Timeout);
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
+	// UI Konfigurācija (Satur klases/stilus)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
+	UUIConfig* UIConfig;
+
+	// --- Logrīku pārvaldība ---
+    
 	UFUNCTION(BlueprintCallable, Category = "UI Management")
 	void PushWidget(UUserWidget* NewWidget, bool bShowCursor = true, bool bPauseGame = false);
 
 	UFUNCTION(BlueprintCallable, Category = "UI Management")
 	void PopWidget();
 
+	UFUNCTION(BlueprintCallable, Category = "UI Management")
 	void ClearAllWidgets();
+
+	// Specifisks palīgs grafikas apstiprinājumiem u.c.
+	UUIConfirmationPopup* PushConfirmationPopup(FText CategoryName, float Timeout);
 
 private:
 	UPROPERTY()

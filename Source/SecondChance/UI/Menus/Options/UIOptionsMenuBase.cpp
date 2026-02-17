@@ -11,6 +11,9 @@
 void UUIOptionsMenuBase::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
+ 
+    UIManager = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();    // Iegūstam subsystemu vienreiz
+    
     BindButtons();
 }
 
@@ -49,6 +52,12 @@ void UUIOptionsMenuBase::BindButtons()
 }
 
 /* === SETTINGS LOGIC === */
+
+class UUIConfig* UUIOptionsMenuBase::GetUIConfig() const
+{
+    // Ja mums ir UIManager, atdodam tā konfigurāciju, ja nē - nullptr
+    return UIManager ? UIManager->UIConfig : nullptr;
+}
 
 void UUIOptionsMenuBase::SetAudioOption(EAudioOption Option, float Value)
 {
@@ -90,23 +99,22 @@ void UUIOptionsMenuBase::CancelAudioSettings()
 }
 void UUIOptionsMenuBase::ApplyGraphicsSettings()
 {
-    UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (!UIMan) return;
+    if (!UIManager) return;
 
     if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
     {
         Settings->ApplySettings(false);
     }
 
-    UUIConfirmationPopup* Popup = UIMan->PushConfirmationPopup(FText::FromString("Graphics"), 15.0f);
+    UUIConfirmationPopup* Popup = UIManager->PushConfirmationPopup(FText::FromString("Graphics"), 15.0f);
 
     if (Popup)
     {
         Popup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::ConfirmGraphicsChanges);
         Popup->OnTimedOutOrCancelled.AddUniqueDynamic(this, &UUIOptionsMenuBase::RevertGraphicsChanges);
         
-        Popup->OnConfirmed.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);
-        Popup->OnTimedOutOrCancelled.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);
+        Popup->OnConfirmed.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::PopWidget);
+        Popup->OnTimedOutOrCancelled.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::PopWidget);
     }
 }
 
@@ -225,13 +233,12 @@ void UUIOptionsMenuBase::HandleGameplayTab() { SetActiveCategory(ESettingsCatego
 
 void UUIOptionsMenuBase::HandleBack()
 {
-    UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (!UIMan) return;
+    if (!UIManager) return;
 
     // Ja ir nesaglabātas izmaiņas...
     if (PendingCategories.Num() > 0)
     {
-        UUIConfirmationPopup* Popup = UIMan->PushConfirmationPopup(
+        UUIConfirmationPopup* Popup = UIManager->PushConfirmationPopup(
             FText::FromString("Unsaved Changes"), 
             10.0f
         );
@@ -240,15 +247,15 @@ void UUIOptionsMenuBase::HandleBack()
         {
             // Ja apstiprina iziešanu, mēs vienkārši taisām divus Popus (vienu priekš brīdinājuma, otru lai aizvērtu šo)
             Popup->OnConfirmed.AddUniqueDynamic(this, &UUIOptionsMenuBase::HandleCancel); // Atceļam izmaiņas
-            Popup->OnConfirmed.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);  // Aizveram brīdinājumu
-            Popup->OnConfirmed.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget);  // Aizveram Options
+            Popup->OnConfirmed.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::PopWidget);  // Aizveram brīdinājumu
+            Popup->OnConfirmed.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::PopWidget);  // Aizveram Options
 
-            Popup->OnTimedOutOrCancelled.AddUniqueDynamic(UIMan, &UUIManagerSubsystem::PopWidget); // Tikai aizveram brīdinājumu
+            Popup->OnTimedOutOrCancelled.AddUniqueDynamic(UIManager, &UUIManagerSubsystem::PopWidget); // Tikai aizveram brīdinājumu
         }
     }
     else
     {
-        UIMan->PopWidget(); // Izejam uzreiz
+        UIManager->PopWidget(); // Izejam uzreiz
     }
 }
 
@@ -256,28 +263,34 @@ void UUIOptionsMenuBase::HandleBack()
 
 void UUIOptionsMenuBase::SetMasterVolume(float Value) const
 {
-    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->MasterSoundClass)
+    if (UUIConfig* Config = GetUIConfig())
     {
-        UIMan->UIConfig->MasterSoundClass->Properties.Volume = Value;
+        if (Config->MasterSoundClass)
+        {
+            Config->MasterSoundClass->Properties.Volume = Value;
+        }
     }
 }
 
 void UUIOptionsMenuBase::SetMusicVolume(float Value) const
 {
-    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->MusicSoundClass)
+    if (UUIConfig* Config = GetUIConfig())
     {
-        UIMan->UIConfig->MusicSoundClass->Properties.Volume = Value;
+        if (Config->MusicSoundClass)
+        {
+            Config->MusicSoundClass->Properties.Volume = Value;
+        }
     }
 }
 
 void UUIOptionsMenuBase::SetSFXVolume(float Value) const
 {
-    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SFXSoundClass)
+    if (UUIConfig* Config = GetUIConfig())
     {
-        UIMan->UIConfig->SFXSoundClass->Properties.Volume = Value;
+        if (Config->SFXSoundClass)
+        {
+            Config->SFXSoundClass->Properties.Volume = Value;
+        }
     }
 }
 

@@ -12,9 +12,11 @@ void UBaseLabeledWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
     
-	// Ja editorā ierakstīsi tekstu "LabelDefaultValue", tas automātiski parādīsies
-	if (LabelText && !LabelDefaultValue.IsEmpty())
+	if (LabelText) // Vienmēr pārbaudi pointeri!
 	{
-		LabelText->SetText(LabelDefaultValue);
+		if (!LabelDefaultValue.IsEmpty())
+		{
+			LabelText->SetText(LabelDefaultValue);
+		}
 	}
 }
