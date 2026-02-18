@@ -20,6 +20,7 @@ public:
 
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
 	/** Reakcija uz pending izmaiņām */
@@ -30,6 +31,9 @@ protected:
 	UFUNCTION(BlueprintPure, Category="Options")
 	bool IsPending() const;
 
+
+	virtual void RefreshWidgetUI();
+	
 	/** Kešota norāde uz UIManager */
 	UPROPERTY()
 	UUIManagerSubsystem* UIManager = nullptr;

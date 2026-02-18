@@ -19,6 +19,8 @@ protected:
     virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
 
+    virtual void RefreshWidgetUI() override;
+
     // --- BindWidgets ---
     UPROPERTY(meta = (BindWidget))
     UMenuDropdownWidget* ResolutionCombo;
@@ -53,6 +55,7 @@ protected:
     UFUNCTION() void HandleWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION() void HandleVSyncChanged(bool bIsChecked);
     UFUNCTION() void HandleResolutionScaleChanged(float Value);
+    void SyncGraphicsUI();
 
     /** Override no bāzes klases */
     virtual void HandleSettingsChanged(ESettingsCategory ChangedCategory) override;

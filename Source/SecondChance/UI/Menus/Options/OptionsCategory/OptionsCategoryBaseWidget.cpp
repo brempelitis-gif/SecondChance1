@@ -21,6 +21,13 @@ void UOptionsCategoryBaseWidget::NativeOnInitialized()
 	}
 }
 
+void UOptionsCategoryBaseWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	// Tiklīdz widget parādās, liekam tam ielasīt datus
+	RefreshWidgetUI();
+}
+
 void UOptionsCategoryBaseWidget::NativeDestruct()
 {
 	if (UOptionsBaseWidget* ParentOptions = GetTypedOuter<UOptionsBaseWidget>())
@@ -29,7 +36,10 @@ void UOptionsCategoryBaseWidget::NativeDestruct()
 	}
 	Super::NativeDestruct();
 }
-
+void UOptionsCategoryBaseWidget::RefreshWidgetUI()
+{
+	// Bāzes klasē tā var būt tukša vai saturēt debug tekstu
+}
 void UOptionsCategoryBaseWidget::HandleSettingsChanged(ESettingsCategory ChangedCategory)
 {
 	// Ja ChangedCategory ir None, tas nozīmē "atsvaidzināt visu"

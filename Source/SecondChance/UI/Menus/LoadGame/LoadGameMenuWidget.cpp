@@ -95,10 +95,12 @@ void ULoadGameMenuWidget::HandleDeleteClicked()
     UGameplayStatics::DeleteGameInSlot(SelectedSlotName, 0);
 
     // 2. Izdzēšam Screenshot failu no diska
-    FString ScreenshotPath = FPaths::ProjectSavedDir() + "Screenshots/WindowsEditor/" + SelectedSlotName + "_Portrait.png";
-    if (FPaths::FileExists(ScreenshotPath))
+    FString ScreenshotFull = FPaths::ProjectSavedDir() + "Screenshots/WindowsEditor/" + SelectedSlotName + "_Full.png";
+    FString ScreenshotFace = FPaths::ProjectSavedDir() + "Screenshots/WindowsEditor/" + SelectedSlotName + "_Face.png";
+    if (FPaths::FileExists(ScreenshotFull))
     {
-        IFileManager::Get().Delete(*ScreenshotPath);
+        IFileManager::Get().Delete(*ScreenshotFull);
+        IFileManager::Get().Delete(*ScreenshotFace);
     }
 
     // 3. Izņemam ierakstu no Master Index

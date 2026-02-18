@@ -27,13 +27,14 @@ void USaveSlotWidget::SetupSlot(const FSaveMetadata& Metadata)
     if (PlayerNameText) PlayerNameText->SetText(FText::FromString(Metadata.PlayerName));
     if (SaveDateText) SaveDateText->SetText(FText::FromString(Metadata.SaveDate.ToString(TEXT("%d.%m.%Y %H:%M"))));
 
-    // Atrodam bildes ceļu: Saved/Screenshots/WindowsEditor/SlotName_Portrait.png
-    FString ScreenshotPath = FPaths::ProjectSavedDir() + "Screenshots/WindowsEditor/" + Metadata.SlotName + "_Portrait.png";
+    // Atrodam bildes ceļu
+    FString PlatformName = FPlatformProperties::IniPlatformName();
+    FString ScreenshotPath = FPaths::ProjectSavedDir() + "Screenshots/" + PlatformName + "/" + Metadata.SlotName + "_Full.png";
     
-    UTexture2D* LoadedPortrait = LoadTextureFromFile(ScreenshotPath);
-    if (LoadedPortrait && PortraitImage)
+    UTexture2D* LoadedFull = LoadTextureFromFile(ScreenshotPath);
+    if (LoadedFull && PortraitImage)
     {
-        PortraitImage->SetBrushFromTexture(LoadedPortrait);
+        PortraitImage->SetBrushFromTexture(LoadedFull);
     }
 }
 

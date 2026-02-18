@@ -30,7 +30,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Transitions")
 	void AsyncLoadGameLevel(FName LevelName);
 
-
+	/** Saglabā pēdējā uzņemtā portreta nosaukumu */
+	UPROPERTY(BlueprintReadWrite, Category = "SaveSystem")
+	FString LastCapturedPortraitName;
+	
 	// Konstante indeksa faila nosaukumam
 	const FString MASTER_SAVE_INDEX = "MasterSaveIndex";
 

@@ -108,6 +108,7 @@ private:
 	void FindPreviewActor();// Palīgfunkcija
 	void UpdateNextButtonState(); // Validācija
 	void BindButtons();
+	
 public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")

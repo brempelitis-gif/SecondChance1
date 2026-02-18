@@ -2,6 +2,7 @@
 
 #include "Core/Save/SaveIndex.h"
 #include "Core/Save/SCSaveGame.h"
+#include "Core/Subsystems/UIConfig.h"
 #include "Kismet/GameplayStatics.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
