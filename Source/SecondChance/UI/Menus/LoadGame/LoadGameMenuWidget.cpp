@@ -137,9 +137,12 @@ void ULoadGameMenuWidget::HandleLoadClicked()
     UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
     if (GI)
     {
-        // Šeit mēs pasakām GameInstance, kuru slotu ielādēt pēc līmeņa ielādes
-        // Pieņemsim, ka tev GameInstance ir mainīgais 'CurrentSlotToLoad'
+        // Pasakām GameInstance, kuru slotu ielādēt
         GI->CurrentSlotToLoad = SelectedSlotName;
+        
+        // --- SVARĪGI PORTRETAM ---
+        GI->LastCapturedPortraitName = SelectedSlotName;  // Iedodam PortraitPanel sistēmai pareizo ID
+        GI->bIsLoadingFromSave = true; // Atzīmējam, ka šī ir ielādēta spēle, nevis jauna
 
         GI->AsyncLoadGameLevel(FName("L_GameLevel"));
     }

@@ -48,8 +48,10 @@ void UCharacterSkillTreeWidget::HandlePlayClicked()
     if (!FoundActor) return;
     
     this->SetVisibility(ESlateVisibility::Hidden);
-    
-    FString UniqueSlotID = GI->CreateNewSaveGame(GI->FinalCharacterData);
+
+	// Saglabājam atgriezto ID no CreateNewSaveGame tieši iekš LastCapturedPortraitName
+	FString UniqueSlotID = GI->CreateNewSaveGame(GI->FinalCharacterData);
+	GI->LastCapturedPortraitName = UniqueSlotID;
 
     PrepareCameraForPortrait(FoundActor);
 

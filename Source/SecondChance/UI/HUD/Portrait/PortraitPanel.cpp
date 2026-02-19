@@ -8,23 +8,24 @@ void UPortraitPanel::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// 1. Vispirms uzliekam noklusēto siluetu
 	if (Image_PlayerPortrait && DefaultPortrait)
 	{
 		Image_PlayerPortrait->SetBrushFromTexture(DefaultPortrait);
 	}
 
-	// 2. Ieliekam mazu aizturi, lai cietais disks paspēj "ievilkt elpu" pēc screenshot uzņemšanas
 	FTimerHandle LoadDelayTimer;
+	// Palielinām aizturi uz 0.5s, lai drošāk sagaidītu, ka HDD pabeidz rakstīt failu
 	GetWorld()->GetTimerManager().SetTimer(LoadDelayTimer, [this]()
 	{
 		UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
 		if (!GI || !Image_PlayerPortrait) return;
 
-		// SkillTree logā mēs izmantojām UniqueSlotID, tāpēc meklējam to
-		// Ja UniqueSlotID nav pieejams, mēģinām vārdu (pārbaudi, kā tu saglabāji SkillTree)
-		FString FileName = GI->FinalCharacterData.PlayerName + "_Face.png";
+		// --- LABOJUMS ŠEIT ---
+		// Izmantojam ID, ko saglabājām SkillTree logā, nevis PlayerName
+		FString FileName = GI->LastCapturedPortraitName + "_Face.png";
         
+		UE_LOG(LogTemp, Warning, TEXT("DEBUG PORTRAIT: Meklēju failu: %s"), *FileName);
+
 		FString SavedDir = FPaths::ProjectSavedDir() + "Screenshots/";
 		FString PathEditor = SavedDir + "WindowsEditor/" + FileName;
 		FString PathStandalone = SavedDir + "Windows/" + FileName;
@@ -42,5 +43,9 @@ void UPortraitPanel::NativeConstruct()
 				UE_LOG(LogTemp, Log, TEXT("PORTRAIT: Veiksmīgi ielādēts no %s"), *FinalPath);
 			}
 		}
-	}, 0.2f, false);
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("DEBUG PORTRAIT: Fails netika atrasts! Pārbaudīts: %s"), *PathEditor);
+		}
+	}, 0.5f, false);
 }

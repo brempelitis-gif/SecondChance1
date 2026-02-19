@@ -16,7 +16,6 @@ protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativePreConstruct() override;
-
 	/* =======================
 	 * POGAS (BindWidget)
 	 * ======================= */
@@ -59,6 +58,15 @@ private:
 	UFUNCTION() void HandleOptionsClicked();
 	UFUNCTION() void HandleQuitClicked();
 	
+	// Kešotās atsauces
+	UPROPERTY()
+	UMyGameInstance* GI;
+
+	UPROPERTY()
+	UUIManagerSubsystem* UIMan;
+
+	// Helper funkcija logrīku atvēršanai
+	void OpenSubMenu(TSubclassOf<UUserWidget> MenuClass);
 	
 	void RefreshSaveAvailability();// palīgfunkcija pogu redzamībai
 	void BindButtons();

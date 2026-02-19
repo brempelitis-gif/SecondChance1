@@ -4,6 +4,7 @@
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "Core/Save/SaveIndex.h"
+#include "Core/Subsystems/UIConfig.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "UI/Menus/LoadGame/LoadGameMenuWidget.h"
@@ -15,9 +16,6 @@ void UMainMenuWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
     BindButtons();
-
-    // Sākumā "Continue" poga varētu būt izslēgta, ja nav saglabātu spēļu
-    // Te varētu pielikt pārbaudi: ContinueButton->SetIsEnabled(HasSaveGame());
 }
 
 void UMainMenuWidget::NativePreConstruct()
@@ -32,11 +30,27 @@ void UMainMenuWidget::NativePreConstruct()
 void UMainMenuWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
+    // Inicializējam atsauces vienreiz
+    GI = Cast<UMyGameInstance>(GetGameInstance());
+    if (GI)
+    {
+        UIMan = GI->GetSubsystem<UUIManagerSubsystem>();
+    }
     // Katru reizi, kad logrīks tiek parādīts, pārbaudām seivus
     RefreshSaveAvailability();
 }
-
+// Jauna, optimizēta funkcija apakšizvēlņu atvēršanai
+void UMainMenuWidget::OpenSubMenu(TSubclassOf<UUserWidget> MenuClass)
+{
+    if (UIMan && MenuClass)
+    {
+        UUserWidget* NewMenu = CreateWidget<UUserWidget>(this, MenuClass);
+        if (NewMenu)
+        {
+            UIMan->PushWidget(NewMenu);
+        }
+    }
+}
 void UMainMenuWidget::BindButtons()
 {
     if (ContinueButton) ContinueButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HandleContinueClicked);
@@ -53,7 +67,7 @@ void UMainMenuWidget::HandleContinueClicked()
     
     if (IndexSave && IndexSave->SavedGames.Num() > 0)
     {
-        // 2. Atrodam jaunāko seivu (salīdzinām datumus)
+        // 2. Atrodam jaunāko seivu
         FSaveMetadata LatestSave = IndexSave->SavedGames[0];
         
         for (const FSaveMetadata& Meta : IndexSave->SavedGames)
@@ -68,9 +82,12 @@ void UMainMenuWidget::HandleContinueClicked()
         UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
         if (GI)
         {
-            // Šeit mēs izmantojam tos mainīgos, ko iepriekš sarunājām pievienot GI
             GI->CurrentSlotToLoad = LatestSave.SlotName;
             GI->bIsLoadingFromSave = true;
+
+            // --- SVARĪGAIS LABOJUMS PORTRETAM ---
+            // Pasakām HUD sistēmai, kuru bildi ielādēt
+            GI->LastCapturedPortraitName = LatestSave.SlotName;
 
             UE_LOG(LogTemp, Log, TEXT("Continue: Ielādējam jaunāko slotu: %s"), *LatestSave.SlotName);
             
@@ -82,44 +99,17 @@ void UMainMenuWidget::HandleContinueClicked()
 
 void UMainMenuWidget::HandleLoadGameClicked()
 {
-    UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->LoadGameMenuClass)
-    {
-        // Izveidojam logrīku
-        ULoadGameMenuWidget* LoadGameWidget = CreateWidget<ULoadGameMenuWidget>(GetWorld(), UIMan->UIConfig->LoadGameMenuClass);
-        if (LoadGameWidget)
-        {
-            // Uzstumjam to uz ekrāna virs Main Menu
-            UIMan->PushWidget(LoadGameWidget);
-        }
-    }
+    if (UIMan && UIMan->UIConfig) OpenSubMenu(UIMan->UIConfig->LoadGameMenuClass);
 }
 
 void UMainMenuWidget::HandleNewGameClicked()
 {
-    // Izmantojam asinhrono ielādi no GameInstance, lai parādītu Splash Screen un ielādētu nākamo līmeni
-
-    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
-    if (GI)
-    {
-    	GI->AsyncLoadGameLevel(FName("L_CharacterSetup"));
-    }
-    
+    if (GI)  GI->AsyncLoadGameLevel(FName("L_CharacterSetup"));
 }
 
 void UMainMenuWidget::HandleOptionsClicked()
 {
-    UUIManagerSubsystem* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->OptionsMenuClass)
-    {
-        // Izveidojam logrīku
-        UUIOptionsMenuBase* OptionsWidget = CreateWidget<UUIOptionsMenuBase>(GetWorld(), UIMan->UIConfig->OptionsMenuClass);
-        if (OptionsWidget)
-        {
-            // Uzstumjam to uz ekrāna virs Main Menu
-            UIMan->PushWidget(OptionsWidget);
-        }
-    }
+    if (UIMan && UIMan->UIConfig) OpenSubMenu(UIMan->UIConfig->OptionsMenuClass);
 }
 
 void UMainMenuWidget::HandleQuitClicked()
