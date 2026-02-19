@@ -1,6 +1,7 @@
 #include "UCharacterSkillTreeWidget.h"
-
+#include "UI/Menus/NewGame/CreationParts/CharacterActor/ACharacterSetupActor.h"
 #include "MyGameInstance.h"
+#include "CharacterActor/ACharacterSetupActor.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -44,65 +45,77 @@ void UCharacterSkillTreeWidget::HandleBackClicked()
 	// Izsaucam delegātu, ko klausās UCharacterCreationMain
 	OnBackStepRequested.Broadcast();
 }
+
+
 void UCharacterSkillTreeWidget::HandlePlayClicked()
 {
-	UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
-	APlayerController* PC = GetOwningPlayer();
+    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+    APlayerController* PC = GetOwningPlayer();
 
-	if (GI && PC)
+    if (!GI || !PC) return;
+
+    AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ACharacterSetupActor::StaticClass());
+    if (!FoundActor) return;
+
+    FString UniqueSlotID = GI->CreateNewSaveGame(GI->FinalCharacterData);
+
+	// 1. PIEBRAUCAM PIE SEJAS
+	PrepareCameraForPortrait(FoundActor);
+
+	FTimerHandle FaceCaptureTimer;
+	GetWorld()->GetTimerManager().SetTimer(FaceCaptureTimer, [this, GI, UniqueSlotID, FoundActor, PC]()
 	{
-		FString UniqueSlotID = GI->CreateNewSaveGame(GI->FinalCharacterData);
+		FScreenshotRequest::RequestScreenshot(UniqueSlotID + "_Face", false, false);
+		UE_LOG(LogTemp, Warning, TEXT("FOTO: Seja uzņemta."));
 
-		// 1. UZŅEMAM PILNO BILDI
-		FString FullBodyName = UniqueSlotID + "_Full";
-		FScreenshotRequest::RequestScreenshot(FullBodyName, false, false);
-        
-		// 2. SAGATAVOJAM SEJAS FOKUSU
-		ACharacter* PreviewChar = Cast<ACharacter>(PC->GetPawn());
-		if (PreviewChar)
+		// 2. TAIMERIS: FULL BODY
+		FTimerHandle FullBodyTimer;
+		GetWorld()->GetTimerManager().SetTimer(FullBodyTimer, [GI, UniqueSlotID, FoundActor, PC]()
 		{
-			PrepareCameraForPortrait(PreviewChar);
-		}
+			// LABOJUMS: Izmantojam fiksētu nobīdi pa Y asi (180 vienības), 
+			// nevis ForwardVector, lai bilde vienmēr būtu no priekšas.
+			FVector FullCamPos = FoundActor->GetActorLocation() + FVector(0.0f, 180.0f, 80.0f);
+			FRotator FullCamRot = (FoundActor->GetActorLocation() + FVector(0.0f, 0.0f, 80.0f) - FullCamPos).Rotation();
+            
+			if (APawn* SpecPawn = PC->GetPawn()) 
+			{
+				SpecPawn->SetActorLocationAndRotation(FullCamPos, FullCamRot);
+			}
+			PC->SetControlRotation(FullCamRot);
 
-		GI->LastCapturedPortraitName = UniqueSlotID + "_Face";
+			// Dodam vienu kadru laiku kamerai nostāties
+			FTimerHandle ShotTimer;
+			GI->GetWorld()->GetTimerManager().SetTimer(ShotTimer, [UniqueSlotID]() {
+				FScreenshotRequest::RequestScreenshot(UniqueSlotID + "_Full", false, false);
+				UE_LOG(LogTemp, Warning, TEXT("FOTO: Pilnais augums uzņemts."));
+			}, 0.1f, false);
 
-		// 3. TAIMERIS SEJAS BILDEI (Dodam 0.2s, lai kamera paspēj "pārlēkt")
-		FTimerHandle FaceCaptureTimer;
-		GetWorld()->GetTimerManager().SetTimer(FaceCaptureTimer, [GI]()
-		{
-			FScreenshotRequest::RequestScreenshot(GI->LastCapturedPortraitName, false, false);
-		}, 0.2f, false);
+			// 3. TAIMERIS: IELĀDĒJAM LĪMENI
+			FTimerHandle LoadLevelTimer;
+			GI->GetWorld()->GetTimerManager().SetTimer(LoadLevelTimer, [GI]()
+			{
+				if (GI) GI->AsyncLoadGameLevel(FName("L_GameLevel"));
+			}, 0.6f, false);
 
-		// 4. TAIMERIS LĪMEŅA IELĀDEI (Dodam 1.2s, lai abas bildes paspēj nonākt diskā)
-		// Šis ir drošāks laiks, īpaši uz lēnākiem diskiem.
-		FTimerHandle LoadLevelTimer;
-		GetWorld()->GetTimerManager().SetTimer(LoadLevelTimer, [GI]()
-		{
-			if (GI) GI->AsyncLoadGameLevel(FName("L_GameLevel"));
-		}, 1.2f, false);
-	}
+		}, 0.5f, false);
+	}, 0.5f, false);
 }
-void UCharacterSkillTreeWidget::PrepareCameraForPortrait(ACharacter* TargetChar)
+void UCharacterSkillTreeWidget::PrepareCameraForPortrait(AActor* TargetActor)
 {
 	APlayerController* PC = GetOwningPlayer();
-	if (!PC || !TargetChar) return;
+	if (!PC || !TargetActor) return;
 
-	// 1. Atrodam kameras pozīciju pie sejas
-	// Pārliecinies, ka Mesh ir "head" sockets!
-	FVector HeadLocation = TargetChar->GetMesh()->GetSocketLocation("head");
-    
-	// Novietojam kameru tieši pretī sejai (50 vienības uz priekšu)
-	FVector CameraLocation = HeadLocation + (TargetChar->GetActorForwardVector() * 45.0f); 
-	FRotator CameraRotation = (HeadLocation - CameraLocation).Rotation();
+	FVector HeadPos = TargetActor->GetActorLocation() + FVector(0, 0, 165.0f); // Aptuvenais galvas augstums
+	FVector CamPos = HeadPos + FVector(0.0f, 65.0f, 0.0f); 
+	FRotator CamRot = (HeadPos - CamPos).Rotation();
 
-	// 2. Ja tev līmenī ir CameraActor, labāk kustināt to. 
-	// Ja nē, tad PC->SetViewTarget(TargetChar) un tad grozām tēlu.
-	// Bet vienkāršākais - pārvietojam PlayerController kameru:
-	PC->SetControlRotation(CameraRotation);
-	PC->SetAudioListenerOverride(TargetChar->GetMesh(), FVector::ZeroVector, FRotator::ZeroRotator);
-    
-	// Force set location (tikai uz mirkli)
-	if(APawn* P = PC->GetPawn()) {
-		P->SetActorLocation(CameraLocation);
+	// 1. Teleportējam Pawn
+	if (APawn* SpecPawn = PC->GetPawn())
+	{
+		SpecPawn->SetActorLocationAndRotation(CamPos, CamRot);
 	}
+    
+	// 2. !!! SVARĪGI !!! Piespiežam skatu būt no Pawn
+	PC->SetViewTarget(PC->GetPawn());
+	PC->SetControlRotation(CamRot);
 }

@@ -44,5 +44,5 @@ protected:
 
 	UFUNCTION() void HandleBackClicked();
 	UFUNCTION() void HandlePlayClicked();
-	void PrepareCameraForPortrait(ACharacter* TargetChar);
+	void PrepareCameraForPortrait(AActor* TargetChar);
 };

@@ -1,6 +1,8 @@
 #include "UCharacterCreationMain.h"
 #include "Components/WidgetSwitcher.h"
 #include "CreationParts/UCharacterSkillTreeWidget.h"
+#include "CreationParts/CharacterActor/ACharacterSetupActor.h"
+#include "Kismet/GameplayStatics.h"
 #include "UI/Menus/NewGame/CreationParts/UCharacterAppearanceWidget.h"
 
 
@@ -45,6 +47,18 @@ void UCharacterCreationMain::SwitchToAppearance()
 	if (StepSwitcher)
 	{
 		StepSwitcher->SetActiveWidgetIndex(0);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("MASTER: Switching to Index 0 (Appearance)"));
+   
+		AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ACharacterSetupActor::StaticClass());
+		APlayerController* PC = GetOwningPlayer();
+       
+		if (FoundActor && PC)
+		{
+			// Atkāpjamies atpakaļ uz kopskatu
+			FVector FullViewPos = FoundActor->GetActorLocation() + FVector(-150.0f, 250.0f, 90.0f);
+			FRotator FullViewRot = (FoundActor->GetActorLocation() + FVector(0,0,90.0f) - FullViewPos).Rotation();
+       
+			if (PC->GetPawn()) PC->GetPawn()->SetActorLocationAndRotation(FullViewPos, FullViewRot);
+			PC->SetControlRotation(FullViewRot);
+		}
 	}
 }

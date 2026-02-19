@@ -2,10 +2,13 @@
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "Core/Subsystems/UIConfig.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/SpectatorPawn.h"
 #include "UI/Menus/NewGame/UCharacterCreationMain.h"
 
 AGM_CharacterSetup::AGM_CharacterSetup()
 {
+	// Šis neļaus dzinējam izveidot "smagu" spēlētāju, kas bloķē kameru
+	DefaultPawnClass = ASpectatorPawn::StaticClass();
 }
 
 void AGM_CharacterSetup::BeginPlay()

@@ -10,7 +10,6 @@
 void UCharacterAppearanceWidget::NativePreConstruct()
 {
     Super::NativePreConstruct();
-    
     // Uzstādām tekstus izmantojot tavas klases metodes
     if (NameInput) NameInput->SetLabel(NameLabelText);
     if (GenderCheckBox) GenderCheckBox->SetLabel(GenderLabelText);
@@ -27,9 +26,45 @@ void UCharacterAppearanceWidget::NativePreConstruct()
 void UCharacterAppearanceWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
     FindPreviewActor();
-    
+
+    FTimerHandle CameraInitTimer;
+    GetWorld()->GetTimerManager().SetTimer(CameraInitTimer, [this]()
+    {
+        if (PreviewActor)
+        {
+            APlayerController* PC = GetOwningPlayer();
+            APawn* Pwn = PC ? PC->GetPawn() : nullptr;
+
+            if (PC && Pwn)
+            {
+                // 1. Iestatām skata mērķi uz PAWN (nevis uz tēlu!)
+                PC->SetViewTarget(Pwn);
+                // 1. POZĪCIJA: 
+                // Y=250 (attālums), Z=90 (augstums)
+                // X = -50.0f (pabīdām kameru pa kreisi, lai tēls vizuāli būtu labajā pusē starp bultiņām)
+                FVector CamPos = PreviewActor->GetActorLocation() + FVector(-150.0f, 250.0f, 90.0f);
+                
+                // 2. MĒRĶIS: 
+                // Mēs skatāmies nevis tieši uz tēlu, bet uz punktu, kas ir "nobīdīts" 
+                // Šis palīdzēs tēlam izskatīties dabiski, nevis sašķiebtam
+                FVector LookAtTarget = PreviewActor->GetActorLocation() + FVector(-10.0f, 0.0f, 90.0f);
+                
+                FRotator CamRot = (LookAtTarget - CamPos).Rotation();
+                // 2. Ja tiešām vajag SetMobility, tad caur RootComponent:
+                if (Pwn->GetRootComponent())
+                {
+                    Pwn->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+                }
+
+                // 3. Teleportējam un piespiežam skatīties caur šo Pawn
+                PC->GetPawn()->SetActorLocationAndRotation(CamPos, CamRot);
+                PC->SetControlRotation(CamRot);
+                PC->SetViewTargetWithBlend(Pwn, 0.0f); // Šis piespiež redzēt no Pawn acīm
+            }
+        }
+    }, 0.2f, false); // 0.2s ir drošākais laiks
+    // ------------------------
     // 1. Iestatām Sākuma Vērtības UI (Slaideri pa vidu)
     float DefaultSliderValue = 0.5f;
 
