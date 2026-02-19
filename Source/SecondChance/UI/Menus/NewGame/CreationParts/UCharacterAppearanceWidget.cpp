@@ -26,56 +26,43 @@ void UCharacterAppearanceWidget::NativePreConstruct()
 void UCharacterAppearanceWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+    // 1. Saglabājam GameInstance atmiņā vienreiz
+    GI = Cast<UMyGameInstance>(GetGameInstance());
     FindPreviewActor();
 
+    // --- Kameras iestatīšana (nemainīta, jo strādā) ---
     FTimerHandle CameraInitTimer;
     GetWorld()->GetTimerManager().SetTimer(CameraInitTimer, [this]()
     {
         if (PreviewActor)
         {
+            PreviewActor->SetActorRotation(FRotator(0.0f, 15.0f, 0.0f));
             APlayerController* PC = GetOwningPlayer();
-            APawn* Pwn = PC ? PC->GetPawn() : nullptr;
-
-            if (PC && Pwn)
+            if (PC && PC->GetPawn())
             {
-                // 1. Iestatām skata mērķi uz PAWN (nevis uz tēlu!)
-                PC->SetViewTarget(Pwn);
-                // 1. POZĪCIJA: 
-                // Y=250 (attālums), Z=90 (augstums)
-                // X = -50.0f (pabīdām kameru pa kreisi, lai tēls vizuāli būtu labajā pusē starp bultiņām)
-                FVector CamPos = PreviewActor->GetActorLocation() + FVector(-150.0f, 250.0f, 90.0f);
-                
-                // 2. MĒRĶIS: 
-                // Mēs skatāmies nevis tieši uz tēlu, bet uz punktu, kas ir "nobīdīts" 
-                // Šis palīdzēs tēlam izskatīties dabiski, nevis sašķiebtam
-                FVector LookAtTarget = PreviewActor->GetActorLocation() + FVector(-10.0f, 0.0f, 90.0f);
-                
-                FRotator CamRot = (LookAtTarget - CamPos).Rotation();
-                // 2. Ja tiešām vajag SetMobility, tad caur RootComponent:
-                if (Pwn->GetRootComponent())
-                {
-                    Pwn->GetRootComponent()->SetMobility(EComponentMobility::Movable);
-                }
+                int32 SizeX, SizeY;
+                PC->GetViewportSize(SizeX, SizeY);
+                float AspectRatio = (float)SizeX / (float)SizeY;
+                float Distance = 220.0f;
+                float DynamicOffset = Distance * AspectRatio * -0.35f; 
 
-                // 3. Teleportējam un piespiežam skatīties caur šo Pawn
+                FVector CamPos = PreviewActor->GetActorLocation() + FVector(DynamicOffset, Distance, 85.0f);
+                FVector LookAtTarget = PreviewActor->GetActorLocation() + FVector(DynamicOffset, 0.0f, 85.0f); 
+                FRotator CamRot = (LookAtTarget - CamPos).Rotation();
+
                 PC->GetPawn()->SetActorLocationAndRotation(CamPos, CamRot);
                 PC->SetControlRotation(CamRot);
-                PC->SetViewTargetWithBlend(Pwn, 0.0f); // Šis piespiež redzēt no Pawn acīm
+                PC->SetViewTargetWithBlend(PC->GetPawn(), 0.0f);
             }
         }
-    }, 0.2f, false); // 0.2s ir drošākais laiks
-    // ------------------------
-    // 1. Iestatām Sākuma Vērtības UI (Slaideri pa vidu)
+    }, 0.2f, false);
+    
+    // 2. Sākuma vērtības
     float DefaultSliderValue = 0.5f;
-
     if (HeightSlider) HeightSlider->SetValue(DefaultSliderValue);
     if (WeightSlider) WeightSlider->SetValue(DefaultSliderValue);
-    
-    // Pieņemsim: Checkbox OFF = Vīrietis, Checkbox ON = Sieviete
     if (GenderCheckBox) GenderCheckBox->SetIsChecked(false);
 
-    // 2. Piespiedu kārtā izsaucam "Changed" funkcijas, 
-    // lai tās aprēķinātu cm/kg un nosūtītu datus uz 3D aktieri.
     HandleHeightChanged(DefaultSliderValue);
     HandleWeightChanged(DefaultSliderValue);
     HandleGenderChanged(false);
@@ -84,9 +71,6 @@ void UCharacterAppearanceWidget::NativeConstruct()
 void UCharacterAppearanceWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
-
-    
-
     BindButtons();
 }
 
@@ -130,10 +114,7 @@ void UCharacterAppearanceWidget::HandleWeightChanged(float Value)
     float DisplayWeight = FMath::Lerp(MinKg, MaxKg, Value);
 
     // 3. Nosūtam skaitli uz tavu slaideri
-    if (WeightSlider)
-    {
-        WeightSlider->SetValueUI(DisplayWeight);
-    }
+    if (WeightSlider) WeightSlider->SetValueUI(DisplayWeight);
 
     if (PreviewActor) PreviewActor->UpdatePreview(CurrentData);
 }
@@ -175,28 +156,49 @@ void UCharacterAppearanceWidget::FindPreviewActor()
 
 void UCharacterAppearanceWidget::HandleNameChanged(const FText& Text)
 {
-    CurrentData.PlayerName = Text.ToString();
+    FString NameStr = Text.ToString();
+    int32 MaxLen = 12; // Maksimālais vārda garums
+
+    // 1. Ierobežojam garumu
+    if (NameStr.Len() > MaxLen)
+    {
+        NameStr = NameStr.Left(MaxLen);
+        if (NameInput)
+        {
+            // Atjaunojam tekstu lodziņā, ja tas pārsniedz limitu
+            NameInput->SetText(FText::FromString(NameStr));
+        }
+    }
+
+    // 2. Saglabājam un atjaunojam pogas stāvokli
+    CurrentData.PlayerName = NameStr;
     UpdateNextButtonState();
 }
 
 void UCharacterAppearanceWidget::HandleBackClicked()
 {
-    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
-    if (GI)
-    {
-        GI->AsyncLoadGameLevel(FName("L_MainMenu"));
-    }
+    if (GI) GI->AsyncLoadGameLevel(FName("L_MainMenu"));
 }
 void UCharacterAppearanceWidget::UpdateNextButtonState()
 {
-    bool bNameValid = NameInput && !NameInput->GetText().IsEmpty();
-    // Pievieno citas pārbaudes (Age, etc.)
+    FString TrimmedName = CurrentData.PlayerName.TrimStartAndEnd();
     
-    if (NextBtn) NextBtn->SetIsEnabled(bNameValid);
+    // Pārbaudes:
+    // a) Vārds nav tukšs
+    // b) Garums ir vismaz 2 simboli (pēc atstarpju noņemšanas)
+    bool bIsNameValid = TrimmedName.Len() >= 2;
+
+    // c) (Papildus) Varētu pārbaudīt, vai vārds nesatur tikai burtus/ciparus
+    // Ja gribi ļoti stingri: 
+    // for (TChar<TCHAR> Char : TrimmedName) { if(!FChar::IsAlnum(Char)) bIsNameValid = false; }
+
+    if (NextBtn)
+    {
+        NextBtn->SetIsEnabled(bIsNameValid);
+    }
 }
 void UCharacterAppearanceWidget::HandleNextClicked()
 {
-    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
     if (GI)
     {
         // 1. Sinhronizējam vārdu no InputBox

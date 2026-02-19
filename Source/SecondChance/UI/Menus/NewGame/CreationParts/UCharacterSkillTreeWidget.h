@@ -7,6 +7,8 @@
 #include "UI/Base/MenuButton/MenuButtonWidget.h"
 #include "UCharacterSkillTreeWidget.generated.h"
 
+class UMyGameInstance;
+
 // Delegāts, lai pasacītu Master logrīkam iet atpakaļ
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSkillTreeNavigationRequested);
 
@@ -24,6 +26,7 @@ public:
 
 protected:
 	virtual void NativePreConstruct() override;
+	void NativeConstruct();
 	virtual void NativeOnInitialized() override;
 	
 	FCharacterCustomizationData CurrentData;
@@ -34,6 +37,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UMenuButtonWidget* PlayBtn;
+
+	UPROPERTY()
+	UMyGameInstance* GI;
 	
 	// --- Teksti (Rediģējami no Blueprint Details paneļa) ---
 	UPROPERTY(EditAnywhere, Category = "Labels")

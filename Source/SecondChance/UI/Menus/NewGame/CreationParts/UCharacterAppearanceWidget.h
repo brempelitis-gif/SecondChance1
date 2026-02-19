@@ -108,7 +108,8 @@ private:
 	void FindPreviewActor();// Palīgfunkcija
 	void UpdateNextButtonState(); // Validācija
 	void BindButtons();
-	
+	UPROPERTY()
+	class UMyGameInstance* GI;
 public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")

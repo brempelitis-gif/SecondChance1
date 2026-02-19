@@ -15,6 +15,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* Image_PlayerPortrait;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	UTexture2D* DefaultPortrait;
+	
 	virtual void NativeConstruct() override;
 
 	// Funkcija, kas ielādēs bildi
