@@ -45,7 +45,8 @@ void UUIManagerSubsystem::PushWidget(UUserWidget* NewWidget, bool bShowCursor, b
 
     if (!NewWidget->IsInViewport())
     {
-        NewWidget->AddToViewport();
+        // Pievienojam ar augstu ZOrder (piem. 10), lai tas nebūtu aiz melna Splash screen
+        NewWidget->AddToViewport(10);
     }
     
     WidgetStack.Push(NewWidget);
@@ -77,6 +78,7 @@ void UUIManagerSubsystem::PopWidget()
     UpdateInputMode();
 }
 
+// UIManagerSubsystem.cpp
 void UUIManagerSubsystem::UpdateInputMode()
 {
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
@@ -84,8 +86,8 @@ void UUIManagerSubsystem::UpdateInputMode()
 
     if (WidgetStack.Num() > 0)
     {
-        FInputModeUIOnly InputMode;
-        // Fokusējamies uz pēdējo pievienoto widgetu
+        // IZMANTO ŠO, lai neizmet no spēles:
+        FInputModeGameAndUI InputMode; 
         InputMode.SetWidgetToFocus(WidgetStack.Last()->TakeWidget());
         InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
         

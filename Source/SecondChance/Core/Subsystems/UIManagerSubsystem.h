@@ -34,9 +34,8 @@ public:
 	// Specifisks palīgs grafikas apstiprinājumiem u.c.
 	UUIConfirmationPopup* PushConfirmationPopup(FText CategoryName, float Timeout);
 
-private:
 	UPROPERTY()
 	TArray<UUserWidget*> WidgetStack;
-
+	
 	void UpdateInputMode();
 };

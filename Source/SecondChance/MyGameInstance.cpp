@@ -1,5 +1,4 @@
 #include "MyGameInstance.h"
-
 #include "Core/Save/SaveIndex.h"
 #include "Core/Save/SCSaveGame.h"
 #include "Core/Subsystems/UIConfig.h"
@@ -7,77 +6,129 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "UI/Base/SplashScreen/Splash.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
 
 class USaveIndex;
 
 void UMyGameInstance::Init()
 {
-	Super::Init();
-
-	if (UUIManagerSubsystem* UIManager = GetSubsystem<UUIManagerSubsystem>())
-	{
-		// Piesaistām Config
-		UIManager->UIConfig = UIConfig;
-	}
+    Super::Init();
+    
+    UIMan = GetSubsystem<UUIManagerSubsystem>();
+    if (UIMan) UIMan->UIConfig = UIConfig; 
+}
+void UMyGameInstance::LoadComplete(const float LoadTime, const FString& MapName)
+{
+    // Šī ir dzinēja funkcija, kas izsaucas, kad ielāde IR pabeigta
+    Super::LoadComplete(LoadTime, MapName);
+    
+    UE_LOG(LogTemp, Log, TEXT("GameInstance: Ielāde pabeigta mapei: %s"), *MapName);
+    OnLevelLoaded();
 }
 
 void UMyGameInstance::Shutdown()
 {
-	Super::Shutdown();
+    Super::Shutdown();
 }
 
 UUIManagerSubsystem* UMyGameInstance::GetUIManager() const
 {
-	return GetSubsystem<UUIManagerSubsystem>();
+    return GetSubsystem<UUIManagerSubsystem>();
+}
+
+void UMyGameInstance::TogglePauseMenu()
+{
+    if (!UIMan || !UIConfig || !UIConfig->PauseMenuClass) return;
+
+    // 1. Pārbaudām, vai staks nav tukšs un vai pēdējais logs ir Pauzes izvēlne
+    if (UIMan->WidgetStack.Num() > 0 && UIMan->WidgetStack.Last()->IsA(UIConfig->PauseMenuClass))
+    {
+       // Ja pauze jau ir virspusē, aizveram to
+       UIMan->PopWidget();
+        
+       // Atpauzējam spēli (tavs PopWidget to izdara automātiski, ja staks kļūst tukšs, 
+       // bet drošības pēc, ja ir citi logi apakšā:)
+       UGameplayStatics::SetGamePaused(GetWorld(), false);
+    }
+    else
+    {
+       // 2. Ja pauze nav atvērta, izveidojam un "uzstumjam" to
+       UUserWidget* PauseMenu = CreateWidget<UUserWidget>(this, UIConfig->PauseMenuClass);
+       if (PauseMenu)
+       {
+          // Izmantojam tavu PushWidget: bShowCursor = true, bPauseGame = true
+          UIMan->PushWidget(PauseMenu, true, true);
+       }
+    }
+}
+
+void UMyGameInstance::PrepareForLoad(FString SlotName)
+{
+    CurrentSlotToLoad = SlotName;
+    LastCapturedPortraitName = SlotName; // Šis nodrošina bildi HUD portretā
+    bIsLoadingFromSave = true;
+
+    UE_LOG(LogTemp, Log, TEXT("GameInstance: Sagatavota ielāde slotam: %s"), *SlotName);
 }
 
 void UMyGameInstance::AsyncLoadGameLevel(FName LevelName)
 {
-	// 1. Parādām Splash Screen (šeit tu izsauc savu UI sistēmu)
-	UUIManagerSubsystem* UIMan = GetUIManager();
-	if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SplashWidgetClass)
-	{
-		// Izveidojam logrīku
-		UUserWidget* SplasheWidget = CreateWidget<UUserWidget>(GetWorld(), UIMan->UIConfig->SplashWidgetClass);
-		if (SplasheWidget)
-		{
-			// Uzstumjam to uz ekrāna
-			UIMan->PushWidget(SplasheWidget);
-		}
-	}
-	// 2. Ceļa validācija un ielāde
-	// Pārliecināmies, ka ceļš sākas ar /Game/
-	FString LevelPath = LevelName.ToString();
-	if (!LevelPath.StartsWith(TEXT("/Game/")))
-	{
-		// Pielāgo šo ceļu savai mapju struktūrai!
-		LevelPath = TEXT("/Game/ManaSpele/Levels/") + LevelPath;
-	}
+    // 1. Parādām Splash Screen
+    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SplashWidgetClass)
+    {
+        UUserWidget* SplasheWidget = CreateWidget<UUserWidget>(GetWorld(), UIMan->UIConfig->SplashWidgetClass);
+        if (SplasheWidget)
+        {
+            // --- LABOJUMS ŠEIT ---
+            // Padodam 'false, false', lai pele nerādītos un, GALVENAIS, lai spēle netiktu nopauzēta!
+            // Ja spēle apstājas, taimeris nekad neizsauks OpenLevel.
+            UIMan->PushWidget(SplasheWidget, false, false);
+        }
+    }
 
-	LoadPackageAsync(LevelPath,
-		FLoadPackageAsyncDelegate::CreateLambda([this, LevelPath](const FName& PackageName, UPackage* LoadedPackage, EAsyncLoadingResult::Type Result)
-		{
-			if (Result == EAsyncLoadingResult::Succeeded)
-			{
-				// Kad ielādēts, izmantojam nosaukumu bez ceļa priekš OpenLevel
-				FName ShortLevelName = FName(*FPackageName::GetShortName(PackageName));
-				UGameplayStatics::OpenLevel(this, ShortLevelName);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("AsyncLoading: Neizdevās ielādēt %s"), *LevelPath);
-			}
-		}),
-		0, PKG_ContainsMap);
+    // 2. Ja nosaukumā ir pilns ceļš, izvelkam tikai īso nosaukumu
+    FString LevelPath = LevelName.ToString();
+    if (LevelPath.StartsWith(TEXT("/Game/")))
+    {
+        LevelName = FName(*FPaths::GetBaseFilename(LevelPath));
+    }
+
+    // 3. Dodam mirkli UI uzzīmēties un tad veram vaļā līmeni
+    FTimerHandle TimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, LevelName]()
+    {
+        UGameplayStatics::OpenLevel(this, LevelName);
+    }, 0.1f, false);
 }
 
 void UMyGameInstance::UpdateSaveIndex(FString SlotName, FString PlayerName)
 {
 }
 
+
+
 void UMyGameInstance::OnLevelLoaded()
 {
+    if (UIMan)
+    {
+        // Tīrām TIKAI Splash logrīkus, nevis visu Viewportu
+        for (int32 i = UIMan->WidgetStack.Num() - 1; i >= 0; --i)
+        {
+            UUserWidget* CurrentWidget = UIMan->WidgetStack[i];
+            // Ja tas ir Splash klases logrīks, tad metam ārā
+            if (CurrentWidget && CurrentWidget->IsA(UIConfig->SplashWidgetClass))
+            {
+                UIMan->WidgetStack.RemoveAt(i);
+                CurrentWidget->RemoveFromParent();
+            }
+        }
+        
+        // Atjaunojam Input Mode uz spēli, lai poga "P" strādātu
+        UIMan->UpdateInputMode(); 
+    }
 }
+
 FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData CharacterData)
 {
     // 1. Ielādējam vai izveidojam Indeksu
@@ -93,8 +144,6 @@ FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData Character
     if (IndexSave->SavedGames.Num() >= 10)
     {
         // --- SCENĀRIJS A: Pārrakstām vecāko ---
-        
-        // Meklējam vecāko datumu
         int32 OldestIndex = 0;
         FDateTime OldestDate = FDateTime::MaxValue();
 
@@ -107,19 +156,16 @@ FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData Character
             }
         }
 
-        // Dabūjam slota nosaukumu, ko pārrakstīt (piem. "SaveSlot_03")
         TargetSlotName = IndexSave->SavedGames[OldestIndex].SlotName;
 
         UE_LOG(LogTemp, Warning, TEXT("Sasniegts limits! Pārrakstām vecāko seivu: %s (Datums: %s)"), 
             *TargetSlotName, *OldestDate.ToString());
 
-        // Izņemam veco ierakstu no saraksta (pievienosim jaunu beigās)
         IndexSave->SavedGames.RemoveAt(OldestIndex);
     }
     else
     {
         // --- SCENĀRIJS B: Veidojam jaunu slotu ---
-        // Ģenerējam unikālu nosaukumu, piemēram, ar GUID vai vienkāršu Timestamp
         TargetSlotName = "SaveSlot_" + FString::FromInt(FDateTime::Now().ToUnixTimestamp());
     }
 
@@ -129,7 +175,7 @@ FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData Character
     {
         NewSave->PlayerData = CharacterData;
         NewSave->SaveSlotName = TargetSlotName;
-        NewSave->CreationDate = FDateTime::Now(); // Ierakstām pašreizējo laiku
+        NewSave->CreationDate = FDateTime::Now(); 
 
         UGameplayStatics::SaveGameToSlot(NewSave, TargetSlotName, 0);
     }
@@ -146,10 +192,10 @@ FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData Character
     UGameplayStatics::SaveGameToSlot(IndexSave, MASTER_SAVE_INDEX, 0);
 
     UE_LOG(LogTemp, Log, TEXT("Jauna spēle veiksmīgi saglabāta slotā: %s"), *TargetSlotName);
-	
-	// Funkcijas beigās atgriežam izmantoto TargetSlotName
-	return TargetSlotName;
+    
+    return TargetSlotName;
 }
+
 void UMyGameInstance::ClearLoadData()
 {
     CurrentSlotToLoad = TEXT("");

@@ -46,7 +46,6 @@ void ULoadGameMenuWidget::RefreshSaveList()
     SaveListScrollBox->ClearChildren();
 
     // 2. Ielādējam Master Index
-    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
     USaveIndex* IndexSave = Cast<USaveIndex>(UGameplayStatics::LoadGameFromSlot("MasterSaveIndex", 0));
 
     if (!IndexSave || IndexSave->SavedGames.Num() == 0)
@@ -132,20 +131,12 @@ void ULoadGameMenuWidget::HandleDeleteClicked()
 
 void ULoadGameMenuWidget::HandleLoadClicked()
 {
-    if (SelectedSlotName.IsEmpty()) return;
-
     UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
-    if (GI)
-    {
-        // Pasakām GameInstance, kuru slotu ielādēt
-        GI->CurrentSlotToLoad = SelectedSlotName;
-        
-        // --- SVARĪGI PORTRETAM ---
-        GI->LastCapturedPortraitName = SelectedSlotName;  // Iedodam PortraitPanel sistēmai pareizo ID
-        GI->bIsLoadingFromSave = true; // Atzīmējam, ka šī ir ielādēta spēle, nevis jauna
+    if (SelectedSlotName.IsEmpty() || !GI) return;
 
-        GI->AsyncLoadGameLevel(FName("L_GameLevel"));
-    }
+    // Viss vienā rindiņā
+    GI->PrepareForLoad(SelectedSlotName);
+    GI->AsyncLoadGameLevel(FName("L_GameLevel"));
 }
 
 void ULoadGameMenuWidget::HandleBackClicked()

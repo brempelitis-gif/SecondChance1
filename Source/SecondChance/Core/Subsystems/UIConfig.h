@@ -15,7 +15,7 @@ public:
 	TSubclassOf<class USplash> SplashWidgetClass;
 
 	// Main Menu Widget
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI|Classes")
 	TSubclassOf<UUIBaseWidget> MainMenuClass;
 
 	// Options Menu Widget
@@ -27,12 +27,12 @@ public:
 	TSubclassOf<UUserWidget> LoadGameMenuClass;
 	
 	// Character Appearance Widget (New Game)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI|Classes")
 	TSubclassOf<class UCharacterCreationMain> NewGameWidgetClass;
 	
 	// Pause Menu Widget
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
-	TSubclassOf<UUIBaseWidget> PauseMenuClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI|Classes")
+	TSubclassOf<UUserWidget> PauseMenuClass;
 
 	// Confirmation Popup Widget
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Classes|Popups")

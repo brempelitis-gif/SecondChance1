@@ -62,36 +62,21 @@ void UMainMenuWidget::BindButtons()
 
 void UMainMenuWidget::HandleContinueClicked()
 {
-    // 1. Ielādējam indeksu
     USaveIndex* IndexSave = Cast<USaveIndex>(UGameplayStatics::LoadGameFromSlot(TEXT("MasterSaveIndex"), 0));
     
     if (IndexSave && IndexSave->SavedGames.Num() > 0)
     {
-        // 2. Atrodam jaunāko seivu
+        // Atrodam jaunāko
         FSaveMetadata LatestSave = IndexSave->SavedGames[0];
-        
         for (const FSaveMetadata& Meta : IndexSave->SavedGames)
         {
-            if (Meta.SaveDate > LatestSave.SaveDate)
-            {
-                LatestSave = Meta;
-            }
+            if (Meta.SaveDate > LatestSave.SaveDate) LatestSave = Meta;
         }
 
-        // 3. Sagatavojam GameInstance ielādei
-        UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
         if (GI)
         {
-            GI->CurrentSlotToLoad = LatestSave.SlotName;
-            GI->bIsLoadingFromSave = true;
-
-            // --- SVARĪGAIS LABOJUMS PORTRETAM ---
-            // Pasakām HUD sistēmai, kuru bildi ielādēt
-            GI->LastCapturedPortraitName = LatestSave.SlotName;
-
-            UE_LOG(LogTemp, Log, TEXT("Continue: Ielādējam jaunāko slotu: %s"), *LatestSave.SlotName);
-            
-            // 4. Sākam ielādi
+            // Izmantojam jauno helper funkciju
+            GI->PrepareForLoad(LatestSave.SlotName);
             GI->AsyncLoadGameLevel(FName("L_GameLevel"));
         }
     }

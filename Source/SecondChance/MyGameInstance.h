@@ -15,14 +15,24 @@ class SECONDCHANCE_API UMyGameInstance : public UGameInstance
 
 public:
 	virtual void Init() override;
+	virtual void LoadComplete(float LoadTime, const FString& MapName) override;
 	virtual void Shutdown() override;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="UI")
 	UUIConfig* UIConfig; // Piesaistām Editorā
 
+	UPROPERTY()
+	UUIManagerSubsystem* UIMan;
+	
 	UFUNCTION(BlueprintCallable, Category="UI")
 	UUIManagerSubsystem* GetUIManager() const;
 
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void TogglePauseMenu();
+	
+	UFUNCTION(BlueprintCallable, Category = "SaveSystem")
+	void PrepareForLoad(FString SlotName);
+	
 	UPROPERTY(BlueprintReadWrite, Category = "Character Data")
 	FCharacterCustomizationData FinalCharacterData;
 
@@ -51,6 +61,7 @@ public:
 
 private:
 	void UpdateSaveIndex(FString SlotName, FString PlayerName);
+
 protected:
 	void OnLevelLoaded();
 };

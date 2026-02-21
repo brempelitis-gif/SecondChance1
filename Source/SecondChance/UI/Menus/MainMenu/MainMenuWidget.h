@@ -4,6 +4,7 @@
 #include "UI/Base/UIBaseWidget.h"
 #include "MainMenuWidget.generated.h"
 
+class UMyGameInstance;
 class UMenuButtonWidget;
 class UUIManagerSubsystem;
 
