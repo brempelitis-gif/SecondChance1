@@ -37,6 +37,7 @@ UUIManagerSubsystem* UMyGameInstance::GetUIManager() const
     return GetSubsystem<UUIManagerSubsystem>();
 }
 
+
 void UMyGameInstance::TogglePauseMenu()
 {
     if (!UIMan || !UIConfig || !UIConfig->PauseMenuClass) return;
@@ -62,17 +63,36 @@ void UMyGameInstance::TogglePauseMenu()
        }
     }
 }
-
 void UMyGameInstance::PrepareForLoad(FString SlotName)
 {
     CurrentSlotToLoad = SlotName;
+    CurrentSaveSlotName = SlotName; // Svarīgi pārrakstīšanai!
     LastCapturedPortraitName = SlotName; // Šis nodrošina bildi HUD portretā
     bIsLoadingFromSave = true;
 
     UE_LOG(LogTemp, Log, TEXT("GameInstance: Sagatavota ielāde slotam: %s"), *SlotName);
 }
-
+// --- IZMAIŅA: Īsta asinhronā ielāde ---
 void UMyGameInstance::AsyncLoadGameLevel(FName LevelName)
+{
+    if (UIMan && UIConfig && UIConfig->SplashWidgetClass)
+    {
+        UUserWidget* Splash = CreateWidget<UUserWidget>(GetWorld(), UIConfig->SplashWidgetClass);
+        if (Splash) UIMan->PushWidget(Splash, false, false);
+    }
+
+    // Pieņemam, ka LevelName ir "L_GameLevel"
+    FString LevelPath = FString::Printf(TEXT("/Game/ManaSpele/Levels/%s"), *LevelName.ToString());
+
+    LoadPackageAsync(LevelPath, FLoadPackageAsyncDelegate::CreateLambda([this, LevelName](const FName& PackageName, UPackage* LoadedPackage, EAsyncLoadingResult::Type Result)
+    {
+        if (Result == EAsyncLoadingResult::Succeeded)
+        {
+            UGameplayStatics::OpenLevel(this, LevelName);
+        }
+    }));
+}
+/*void UMyGameInstance::AsyncLoadGameLevel(FName LevelName)
 {
     // 1. Parādām Splash Screen
     if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SplashWidgetClass)
@@ -100,8 +120,24 @@ void UMyGameInstance::AsyncLoadGameLevel(FName LevelName)
     {
         UGameplayStatics::OpenLevel(this, LevelName);
     }, 0.1f, false);
+}*/
+// --- JAUNS: Datuma atjaunināšana Master Index failā ---
+void UMyGameInstance::UpdateMasterIndexDate(FString SlotName)
+{
+    USaveIndex* IndexSave = Cast<USaveIndex>(UGameplayStatics::LoadGameFromSlot(MASTER_SAVE_INDEX, 0));
+    if (IndexSave)
+    {
+        for (FSaveMetadata& Meta : IndexSave->SavedGames)
+        {
+            if (Meta.SlotName == SlotName)
+            {
+                Meta.SaveDate = FDateTime::Now();
+                break;
+            }
+        }
+        UGameplayStatics::SaveGameToSlot(IndexSave, MASTER_SAVE_INDEX, 0);
+    }
 }
-
 void UMyGameInstance::UpdateSaveIndex(FString SlotName, FString PlayerName)
 {
 }
@@ -191,6 +227,9 @@ FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData Character
     // Saglabājam indeksa failu
     UGameplayStatics::SaveGameToSlot(IndexSave, MASTER_SAVE_INDEX, 0);
 
+    // Beigās piefiksējam, ka šis ir mūsu aktīvais slots:
+    CurrentSaveSlotName = TargetSlotName;
+    
     UE_LOG(LogTemp, Log, TEXT("Jauna spēle veiksmīgi saglabāta slotā: %s"), *TargetSlotName);
     
     return TargetSlotName;
@@ -199,5 +238,6 @@ FString UMyGameInstance::CreateNewSaveGame(FCharacterCustomizationData Character
 void UMyGameInstance::ClearLoadData()
 {
     CurrentSlotToLoad = TEXT("");
+    CurrentSaveSlotName = ""; // Notīrām pie jaunas spēles
     bIsLoadingFromSave = false;
 }

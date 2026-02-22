@@ -17,7 +17,7 @@ protected:
 	virtual void NativeConstruct() override;
 	void BindButtons();
 	virtual void NativeOnInitialized() override;
-	void NativePreConstruct();
+	virtual void NativePreConstruct() override;
 
 	// --- UI Elementi ---
 	UPROPERTY(meta = (BindWidget))

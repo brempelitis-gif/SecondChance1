@@ -32,6 +32,13 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "SaveSystem")
 	void PrepareForLoad(FString SlotName);
+
+	// --- JAUNS: Aktīvais slots pārrakstīšanai ---
+	UPROPERTY(BlueprintReadWrite, Category = "SaveSystem")
+	FString CurrentSaveSlotName;
+
+	// --- JAUNS: Helperis, lai atjauninātu datumu MasterIndex failā ---
+	void UpdateMasterIndexDate(FString SlotName);
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Character Data")
 	FCharacterCustomizationData FinalCharacterData;

@@ -5,6 +5,7 @@
 #include "UI/Menus/LoadGame/SaveSlotWidget.h"
 #include "Core/Save/SaveIndex.h"
 #include "MyGameInstance.h"
+#include "Core/Subsystems/UIManagerSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 void ULoadGameMenuWidget::NativeOnInitialized()
@@ -141,6 +142,17 @@ void ULoadGameMenuWidget::HandleLoadClicked()
 
 void ULoadGameMenuWidget::HandleBackClicked()
 {
-    // Atgriežamies uz galveno izvēlni (L_MainMenu)
-    UGameplayStatics::OpenLevel(this, FName("L_MainMenu"));
+    UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+    if (GI && GI->GetUIManager())
+    {
+        // Tā vietā, lai pārlādētu karti, mēs vienkārši "izmetam" šo logu no staka
+        GI->GetUIManager()->PopWidget();
+        
+        UE_LOG(LogTemp, Log, TEXT("LoadMenu: Atgriežamies atpakaļ, noņemot logrīku."));
+    }
+    else
+    {
+        // Drošības pēc (ja nu kaut kas noiet greizi ar subsystem):
+        UGameplayStatics::OpenLevel(this, FName("L_MainMenu"));
+    }
 }
