@@ -14,18 +14,20 @@ public class SecondChance : ModuleRules
 			"Engine",
 			"InputCore",
 			"EnhancedInput",
-			"AIModule",
-			"StateTreeModule",
-			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
 			"SlateCore",
 			"RHI",
 			"ImageWrapper",
-			"RenderCore"
+			"RenderCore",
+			"GameplayTasks",
+			"GameplayAbilities",
+			"GameplayTags",
+			"SmartObjectsModule",
+			"ModularGameplay"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"SecondChance"

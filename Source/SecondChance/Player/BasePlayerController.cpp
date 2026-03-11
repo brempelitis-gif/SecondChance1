@@ -1,9 +1,44 @@
-#include "SCS_PlayerController.h"
+#include "BasePlayerController.h"
+#include "Character/BasePlayerState.h"
+#include "AbilitySystem/BaseAbilitySystemComponent.h"
+
+
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "MyGameInstance.h"
 
-void ASCS_PlayerController::BeginPlay()
+UBaseAbilitySystemComponent* ABasePlayerController::GetBaseAbilitySystemComponent() const
+{
+	const ABasePlayerState* PS= GetBasePlayerState();
+	return PS ? PS->GetBaseAbilitySystemComponent() : nullptr;
+}
+
+ABasePlayerState* ABasePlayerController::GetBasePlayerState() const
+{
+	return CastChecked<ABasePlayerState>(PlayerState, ECastCheckedType::NullAllowed);
+}
+
+void ABasePlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
+{
+	if (UBaseAbilitySystemComponent* ASC = GetBaseAbilitySystemComponent())
+	{
+		ASC->ProcessAbilityInput(DeltaTime, bGamePaused);
+	}
+	Super::PostProcessInput(DeltaTime, bGamePaused);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+void ABasePlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -20,18 +55,18 @@ void ASCS_PlayerController::BeginPlay()
 	}
 }
 
-void ASCS_PlayerController::SetupInputComponent()
+void ABasePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
 	// Piesaistām funkciju IA_Pause darbībai
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
 	{
-		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ASCS_PlayerController::HandlePause);
+		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ABasePlayerController::HandlePause);
 	}
 }
 
-void ASCS_PlayerController::HandlePause()
+void ABasePlayerController::HandlePause()
 {
 	UE_LOG(LogTemp, Warning, TEXT("PAUZE PIEPRASĪTA!"));
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Poga nospiesta!"));

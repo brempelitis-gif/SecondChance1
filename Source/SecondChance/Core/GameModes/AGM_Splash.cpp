@@ -1,6 +1,7 @@
 
 #include "AGM_Splash.h"
 #include "Blueprint/UserWidget.h"
+#include "Core/Subsystems/UIConfig.h"
 #include "Core/Subsystems/UIManagerSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Base/SplashScreen/Splash.h"
@@ -27,26 +28,7 @@ void AGM_Splash::BeginPlay()
 	FTimerHandle SplashDelayHandle;
 	GetWorldTimerManager().SetTimer(SplashDelayHandle, this, &AGM_Splash::StartAsyncLoad, 2.0f, false);
 
-	/*
-    auto* UIMan = GetGameInstance()->GetSubsystem<UUIManagerSubsystem>();
-    if (UIMan && UIMan->UIConfig && UIMan->UIConfig->SplashWidgetClass)
-    {
-        // Izveidojam logrīku
-        SplashWidget = CreateWidget<USplashScreenWidget>(GetWorld(), UIMan->UIConfig->SplashWidgetClass);
-        
-        if (SplashWidget)
-        {
-            // Reģistrējam caur sistēmu
-            UIMan->PushWidget(SplashWidget);
-        }
-    }
-
-	// Dosim Splash ekrānam vismaz 2 sekundes goda laika pirms sākam ielādi
-	FTimerHandle SplashDelayHandle;
-	GetWorldTimerManager().SetTimer(SplashDelayHandle, this, &AGM_Splash::StartAsyncLoad, 2.0f, false);
-*/
-
-  //  GetWorldTimerManager().SetTimerForNextTick(this, &AGM_Splash::StartAsyncLoad);
+	
 }
 
 

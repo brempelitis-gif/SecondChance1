@@ -2,7 +2,14 @@
 <project version="4">
   <component name="UserContentModel">
     <attachedFolders />
-    <explicitIncludes />
+    <explicitIncludes>
+      <Path>Source/SecondChance/Character/BaseCharacterMovementComponetnt.cpp</Path>
+      <Path>Source/SecondChance/Character/BaseCharacterMovementComponetnt.h</Path>
+      <Path>Source/SecondChance/Character/BaseGameCharacter.cpp</Path>
+      <Path>Source/SecondChance/Character/BaseGameCharacter.h</Path>
+      <Path>Source/SecondChance/Character/PawnGameplayComponent.cpp</Path>
+      <Path>Source/SecondChance/Character/PawnGameplayComponent.h</Path>
+    </explicitIncludes>
     <explicitExcludes />
   </component>
 </project>
